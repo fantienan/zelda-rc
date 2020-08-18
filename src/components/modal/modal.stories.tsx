@@ -16,6 +16,7 @@ const Template: Story<TModalProps> = (args) => {
             title="标题"
             visible={visible}
             drag={args.drag}
+            resizable={args.resizable}
             onOk={() => setVisible(false)}
             onCancel={() => setVisible(false)}
         >
