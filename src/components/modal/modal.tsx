@@ -1,187 +1,346 @@
 import React, { FC, CSSProperties, RefObject, useRef, useEffect, useState } from "react"
+import { createPortal } from "react-dom"
 import { Modal as AModal } from "antd"
-import { Rnd, Props } from 'react-rnd'
+import { Rnd, Props, RndResizeCallback } from 'react-rnd'
 import { ModalProps } from 'antd/lib/modal'
 import './style/index'
 
 type TDelayTask = { modalNode: HTMLElement }
 interface IUpdate {
-    width?: number
-    height?: number
-    x?: number
-    y?: number
+	width?: number
+	height?: number
+	x?: number
+	y?: number
 }
 type TKV<V = any> = {
-    [k: string]: V
+	[k: string]: V
 }
+
+interface IStoreProps {
+	id: any
+	destroyFlag: boolean,
+	portals: {
+		node: HTMLElement | null
+		id: string
+	}
+	rndContainerCls: string
+}
+interface IRendererBasiceProps {
+	rndRef: RefObject<any>
+	destroy: Function
+}
+type TRendererProps = TModalProps & IRendererBasiceProps
 export interface IBasiceModalProps {
-    children?: React.ReactNode
-    /**
-     * 拖拽移动
-    */
-    drag?: boolean
-    /**
-     * 拖拽的配置，参考[react-rnd](https://github.com/bokuweb/react-rnd)
-    */
-    rnd?: Props
-    /**
-     * 改变弹框大小
-    */
-    resizable: boolean
+	children?: React.ReactNode
+	/**
+	 * 拖拽移动
+	*/
+	drag?: boolean
+	/**
+	 * 拖拽的配置，参考[react-rnd](https://github.com/bokuweb/react-rnd)
+	*/
+	rnd?: Props
+	/**
+	 * 改变弹框大小
+	*/
+	resizable: boolean
+	/**
+	 * Modal的显示隐藏
+	 */
+	visible: boolean
+	/**
+	 * 标题
+	 */
+	title: React.ReactNode | string
+	/**
+	 * 宽度
+	*/
+	width: number | string
 }
 export type TModalProps = Partial<IBasiceModalProps & ModalProps>
-type TRendererProps = Partial<TModalProps & { rndRef: RefObject<any> }>
 
 const RND_CLS = "rnd-container"
 const BOX_SHADOW = "box-shadow"
 const REACT_DRAGGBLE_DRAGGED = "react-draggable-dragged"
-const INIT_TIME = "init-time"
+const INIT_TIME_CLS = "init-time"
+const DESTROY_TIME_CLS = "destroy-time"
 const OVERFLOW_CLS = "overflow-hidden"
 const STYLE: CSSProperties = {
-    top: 0,
-    paddingBottom: 0
+	top: 0,
+	paddingBottom: 0
 }
-
+const TOLERANCE = 10
 const DEFAULT_X = 0
 const DEFAULT_Y = 100
 const DELAY = 500
+const BODY_TAG_NAME = "BODY"
+const DEFAULT_WIDTH = 520
+const MIN_HEIGHT = 100
+const DEFAULT_RESIZE_GRID: [number, number] = [20, 20]
+const ANT_MODAL_SELECTOR = ".ant-modal"
+const ANT_MODAL_BODY_SELECTOR = ".ant-modal-body"
+const ANT_MODAL_HEADER_SELECTOR = ".ant-modal-header"
+const ANT_MODAL_FOOTER_SELECTOR = ".ant-modal-footer"
 
 const Renderer: FC<TRendererProps> = (props) => {
-    const { children, rndRef, visible, ...resetProps } = props
-    const [show, setShow] = useState<boolean>()
-    useEffect(() => {
-        props.visible ? setTimeout(() => {
-            setShow(props.visible)
-        }, 50) : setShow(props.visible)
-    }, [props.visible])
-    const modalProps = {
-        ...resetProps,
-        mask: false,
-        getContainer: () => rndRef && rndRef.current ? rndRef.current.resizable.resizable : false,
-        style: STYLE
-    }
-    return <AModal {...modalProps} visible={show}>
-        {props.children}
-    </AModal>
+	const { children, rndRef, visible, destroy, ...resetProps } = props
+	const [show, setShow] = useState<boolean>()
+	const store = useRef<{ modalProps: ModalProps }>({ modalProps: {} })
+	const afterClose = () => {
+		destroy()
+		typeof resetProps.afterClose === "function" && resetProps.afterClose()
+	}
+	useEffect(() => {
+		const modalProps = {
+			...resetProps,
+			mask: false,
+			maskClosable: false,
+			style: STYLE,
+			afterClose
+		}
+		if (rndRef && rndRef.current) {
+			modalProps.getContainer = () => ((rndRef.current || {}).resizable || {}).resizable || false
+		} else if (typeof resetProps.getContainer === "function") {
+			modalProps.getContainer = resetProps.getContainer
+		}
+		store.current.modalProps = modalProps
+		setShow(props.visible)
+
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [props.visible])
+
+	return <AModal {...store.current.modalProps} visible={show} width={resetProps.width}>
+		{props.children}
+	</AModal>
 }
 
 export const Modal: FC<TModalProps> = (props) => {
-    const { children, drag, style, centered, rnd = {}, visible, resizable, ...resetProps } = props
-    const store = useRef<{ id: any }>({ id: null })
-    const rndRef = useRef<any>()
-    const requestAnimationFrameFn = (() => (
-        window.requestAnimationFrame ||
-        window.webkitRequestAnimationFrame ||
-        function (cb: FrameRequestCallback) {
-            return window.setTimeout(cb, 1000 / 60)
-        }
-    ))()
+	const { children, drag, style, centered, rnd = {}, visible, resizable, ...resetProps } = props
+	const [update, forceupdate] = useState(1)
+	const rndRef = useRef<any>()
+	const store = useRef<IStoreProps>({
+		id: null,
+		destroyFlag: false,
+		portals: {
+			node: null,
+			id: `portal-id-${parseInt((Math.random() * 1000000).toString())}`
+		},
+		rndContainerCls: `${RND_CLS}-${parseInt((Math.random() * 1000000).toString())}`
+	})
+	const requestAnimationFrameFn = (
+		window.requestAnimationFrame ||
+		window.webkitRequestAnimationFrame ||
+		function (cb: FrameRequestCallback) {
+			return window.setTimeout(cb, 1000 / 60)
+		}
+	)
 
-    const cancelAnimationFrameFn = (() => (
-        window.cancelAnimationFrame ||
-        window.webkitCancelAnimationFrame ||
-        function (id: any) {
-            window.clearTimeout(id)
-        }
-    ))()
+	const cancelAnimationFrameFn = (
+		window.cancelAnimationFrame ||
+		window.webkitCancelAnimationFrame ||
+		function (id: any) {
+			window.clearTimeout(id)
+		}
+	)
 
-    const fn = (cb: Function) => requestAnimationFrameFn(() => {
-        const modalNode = rndRef.current.resizable.resizable.getElementsByClassName('ant-modal')
-        if (!modalNode.length) {
-            fn(cb)
-            return
-        }
-        cancelAnimationFrameFn(store.current.id)
-        cb({ modalNode: modalNode[0] })
-    })
-    const delayTask = (): Promise<TDelayTask> => new Promise((resolve, reject) => {
-        store.current.id = fn(({ modalNode }: TDelayTask) => setTimeout(() => resolve({ modalNode }), DELAY))
-    })
+	const fn = (cb: Function) => requestAnimationFrameFn(() => {
+		const modalNode = rndRef.current.resizable.resizable.querySelector(ANT_MODAL_SELECTOR)
+		if (!modalNode) {
+			fn(cb)
+			return
+		}
+		cancelAnimationFrameFn(store.current.id)
+		cb({ modalNode })
+	})
+	const delayTask = (): Promise<TDelayTask> => new Promise((resolve, reject) => {
+		store.current.id = fn(({ modalNode }: TDelayTask) => setTimeout(() => resolve({ modalNode }), DELAY))
+	})
 
-    const updateRnd = ({ width = 0, height = 0, x = 0, y = 0 }: IUpdate) => {
-        rndRef.current.updateSize({ width, height })
-        rndRef.current.updatePosition({ x, y })
-    }
+	const updateRnd = ({ width = 0, height = 0, x = 0, y = 0 }: IUpdate) => {
+		rndRef.current.updateSize({ width, height })
+		rndRef.current.updatePosition({ x, y })
+	}
 
-    const getPosition = (width: number, height: number) => {
-        const position = {
-            x: window.innerWidth / 2 - width / 2,
-            y: DEFAULT_Y
-        }
-        if (centered) {
-            position.y = window.innerHeight / 2 - height / 2
-        }
-        return position
-    }
-    // Modal显示之后
-    const afterShowModalFn = async () => {
-        if (rndRef.current) {
-            updateRnd({
-                width: window.innerWidth - DEFAULT_X,
-                height: window.innerHeight - DEFAULT_Y,
-                x: DEFAULT_X,
-                y: DEFAULT_Y - 10
-            })
-            document.getElementsByTagName('body')[0].classList.add(OVERFLOW_CLS)
-            rndRef.current.resizable.resizable.classList.add(INIT_TIME)
-            const { modalNode } = await delayTask()
-            const rect = modalNode.getBoundingClientRect()
-            rndRef.current.resizable.resizable.classList.remove(INIT_TIME)
-            document.getElementsByTagName('body')[0].classList.remove(OVERFLOW_CLS)
-            updateRnd({
-                width: rect.width,
-                height: rect.height,
-                ...getPosition(rect.width, rect.height)
-            })
-            rndRef.current.resizable.resizable.classList.add(BOX_SHADOW)
-        }
-    }
-    // Modal隐藏之后
-    const afterHideModal = () => {
-        if (rndRef.current) {
-            updateRnd({})
-            rndRef.current.resizable.resizable.classList.remove(BOX_SHADOW)
-            rndRef.current.resizable.resizable.classList.remove(REACT_DRAGGBLE_DRAGGED)
-        }
-    }
+	const getPosition = (width: number, height: number) => {
+		const position = {
+			x: window.innerWidth / 2 - width / 2,
+			y: DEFAULT_Y
+		}
+		if (centered) {
+			position.y = window.innerHeight / 2 - height / 2
+		}
+		return position
+	}
 
-    useEffect(() => {
-        if (rndRef.current) {
-            visible === true && afterShowModalFn()
-            visible === false && afterHideModal()
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [props.visible])
-    if (!drag) {
-        return <AModal visible={visible} {...resetProps}>
-            {children}
-        </AModal>
-    }
-    if (!visible) {
-        return null
-    }
-    const rndStyle = ((): CSSProperties => {
-        const s: TKV = {
-            top: rnd.style?.top,
-            left: rnd.style?.left,
-            bottom: rnd.style?.bottom,
-            right: rnd.style?.right,
-        }
-        if (!resizable) {
-            s.overflow = "hidden"
-        }
-        return Object.keys(s).reduce((acc: TKV, k: string) => {
-            s[k] && (acc[k] = s[k])
-            return acc
-        }, {}) as CSSProperties
-    })()
-    return <Rnd ref={rndRef} className={RND_CLS} style={rndStyle} >
-        <Renderer {...resetProps} children={children} rndRef={rndRef} visible={visible} />
-    </Rnd>
+	const createDom = () => {
+		store.current.portals.node = (
+			typeof resetProps.getContainer === "function" &&
+				resetProps.getContainer() instanceof HTMLElement ?
+				resetProps.getContainer() :
+				document.getElementsByTagName("body")[0]
+		)
+		const { id } = store.current.portals
+		store.current.portals.node.classList.add(id)
+		if (store.current.portals.node.tagName !== BODY_TAG_NAME && !document.querySelector(`.${id}`)) {
+			document.getElementsByTagName("body")[0].appendChild(store.current.portals.node)
+		}
+	}
+
+	const updateRndProps = () => ({
+		width: window.innerWidth - DEFAULT_X,
+		height: window.innerHeight - DEFAULT_Y,
+		x: DEFAULT_X,
+		y: DEFAULT_Y - TOLERANCE
+	})
+
+	// Modal显示之后
+	const afterShowModalFn = async () => {
+		if (rndRef.current && drag) {
+			updateRnd(updateRndProps())
+			document.getElementsByTagName('body')[0].classList.add(OVERFLOW_CLS)
+			rndRef.current.resizable.resizable.classList.add(INIT_TIME_CLS)
+			const { modalNode } = await delayTask()
+			const rect = modalNode.getBoundingClientRect()
+			// 反复切换drag时 rndRef.current会丢失
+			if (rndRef.current) {
+				rndRef.current.resizable.resizable.classList.remove(INIT_TIME_CLS)
+				document.getElementsByTagName('body')[0].classList.remove(OVERFLOW_CLS)
+				updateRnd({
+					width: rect.width,
+					height: rect.height,
+					...getPosition(rect.width, rect.height)
+				})
+				rndRef.current.resizable.resizable.classList.add(BOX_SHADOW)
+			}
+		}
+	}
+	// Modal隐藏之后
+	const afterHideModalFn = () => {
+		if (rndRef.current && drag) {
+			document.getElementsByTagName('body')[0].classList.add(OVERFLOW_CLS)
+			updateRnd({
+				...updateRndProps(),
+				height: window.innerHeight + TOLERANCE,
+				y: 0
+			})
+			const { resizable } = rndRef.current.resizable
+			resizable.classList.remove(BOX_SHADOW)
+			resizable.classList.remove(REACT_DRAGGBLE_DRAGGED)
+			resizable.classList.add(DESTROY_TIME_CLS)
+			const { x, y } = resizable.getBoundingClientRect()
+			const antModalNode = resizable.querySelector(ANT_MODAL_SELECTOR)
+			if (antModalNode) {
+				resizable.querySelector(ANT_MODAL_SELECTOR).style.top = y + 'px'
+				resizable.querySelector(ANT_MODAL_SELECTOR).style.left = x + 'px'
+			}
+		}
+	}
+	useEffect(() => {
+		if (rndRef.current) {
+			visible === true && afterShowModalFn()
+			visible === false && afterHideModalFn()
+		}
+		return () => {
+			try {
+				if (store.current.portals.node) {
+					document.getElementsByTagName("body")[0].removeChild(store.current.portals.node)
+					// eslint-disable-next-line react-hooks/exhaustive-deps
+					store.current.portals.node = null
+				}
+			} catch (e) { }
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [props.visible, props.drag])
+	if (!drag) {
+		return <AModal visible={visible} {...resetProps}>
+			{children}
+		</AModal>
+	}
+	if (visible === undefined || store.current.destroyFlag) {
+		store.current.destroyFlag = false
+		return null
+	}
+	createDom()
+	const destroy = () => {
+		document.getElementsByTagName('body')[0].classList.remove(OVERFLOW_CLS)
+		// 销毁组件
+		if (resetProps.destroyOnClose) {
+			store.current.destroyFlag = true
+			forceupdate(update + 1)
+			return
+		}
+		rndRef.current.resizable.resizable.classList.remove(DESTROY_TIME_CLS)
+		updateRnd({
+			x: - DEFAULT_X,
+			y: - DEFAULT_Y
+		})
+	}
+
+	const getRndStyle = () => {
+		const s: TKV = {
+			top: rnd.style?.top,
+			left: rnd.style?.left,
+			bottom: rnd.style?.bottom,
+			right: rnd.style?.right,
+		}
+		if (!resizable) {
+			s.overflow = "hidden"
+		}
+		return Object.keys(s).reduce((acc: TKV, k: string) => {
+			s[k] && (acc[k] = s[k])
+			return acc
+		}, {}) as CSSProperties
+	}
+	const setRect = () => {
+		const containerNode = rndRef.current.resizable.resizable
+		const bodyNode = containerNode.querySelector(ANT_MODAL_BODY_SELECTOR)
+		const headerNodeRect = containerNode.querySelector(ANT_MODAL_HEADER_SELECTOR).getBoundingClientRect()
+		const footerNodeRect = containerNode.querySelector(ANT_MODAL_FOOTER_SELECTOR).getBoundingClientRect()
+		bodyNode.style.height = containerNode.getBoundingClientRect().height - headerNodeRect.height - footerNodeRect.height + 'px'
+	}
+	const onResize: RndResizeCallback = (e, dir, refToElement, delta, position) => {
+		setRect()
+		typeof rnd.onResize === "function" && rnd.onResize(e, dir, refToElement, delta, position)
+	}
+	const getAModalWidth = () => {
+		if (visible === false && resizable && rndRef.current) {
+			const modalRect = rndRef.current.resizable.resizable.querySelector(ANT_MODAL_SELECTOR).getBoundingClientRect()
+			return { width: modalRect.width }
+		}
+		return {
+			width: resetProps.width
+		}
+	}
+	return <>{
+		createPortal(
+			<Rnd
+				ref={rndRef}
+				className={[RND_CLS, store.current.rndContainerCls].join(" ")}
+				style={getRndStyle()}
+				minWidth={resetProps.width}
+				minHeight={MIN_HEIGHT}
+				resizeGrid={DEFAULT_RESIZE_GRID}
+				{...rnd}
+				onResize={onResize}
+			>
+				<Renderer
+					{...resetProps}
+					rndRef={rndRef}
+					visible={visible}
+					destroy={destroy}
+					{...getAModalWidth()}
+				>
+					{children}
+				</Renderer>
+			</Rnd>,
+			store.current.portals.node || document.getElementsByTagName("body")[0]
+		)
+	}</>
 }
 Modal.defaultProps = {
-    drag: true,
-    resizable: false
+	drag: true,
+	resizable: false,
+	width: DEFAULT_WIDTH
 }
 
 export default Modal;

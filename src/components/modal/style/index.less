@@ -1,5 +1,5 @@
 .rnd-container {
-  overflow: hidden !important;
+  background-color: transparent;
   &.react-draggable-dragged,
   &.box-shadow {
     box-shadow: 0 3px 6px -4px rgba(0, 0, 0, 0.12),
@@ -10,8 +10,17 @@
       top: 10px !important;
     }
   }
+  &:not(.init-time):not(.destroy-time) {
+    .ant-modal {
+      margin: 0 !important;
+      width: 100% !important;
+    }
+  }
+  &.destroy-time .ant-modal {
+    margin: 0 !important;
+  }
 }
 
 .overflow-hidden {
-    overflow: hidden !important;
+  overflow: hidden !important;
 }
