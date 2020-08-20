@@ -11,6 +11,10 @@
     "React",
     "storybook"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fantienan/zelda-rc"
+  },
   "peerDependencies": {
     "antd": ">=4.2.0",
     "react": ">=16.8.0",
