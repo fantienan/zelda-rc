@@ -1,4 +1,4 @@
 const fse = require('fs-extra')
 
-fse.copy('./package.json', './dist/package.json')
-fse.copy('./README.md', './dist/README.md')
+fse.copy('./package.json', './build/package.json')
+fse.copy('./README.md', './build/README.md')

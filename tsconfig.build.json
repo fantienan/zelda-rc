@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "outDir": "dist/es",
+    "outDir": "build/es",
     // 指定模块生成方式，["commonjs", "amd", "umd", "system", "es6", "es2015", "esnext", "none"]
     "module": "esnext",
     // 输出代码 ES 版本，可以是 ["es3", "es5", "es2015", "es2016", "es2017", "esnext"]

@@ -1,7 +1,7 @@
 {
   "name": "zelda-rc",
-  "version": "0.1.0",
-  "private": true,
+  "version": "0.2.3",
+  "private": false,
   "main": "es/index.js",
   "module": "es/index.js",
   "types": "es/index.d.ts",
@@ -20,7 +20,9 @@
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0"
   },
-  "dependencies": {},
+  "dependencies": {
+    "react-rnd": "^10.2.1"
+  },
   "scripts": {
     "dev": "react-scripts start",
     "start": "craco start",
@@ -81,7 +83,6 @@
     "react-dom": "^16.13.1",
     "react-is": "^16.13.1",
     "react-resizable": "^1.10.1",
-    "react-rnd": "^10.2.1",
     "react-scripts": "3.4.3",
     "rimraf": "^3.0.2",
     "ts-node": "^8.10.2",

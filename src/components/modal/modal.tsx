@@ -74,7 +74,7 @@ const DEFAULT_Y = 100
 const DELAY = 500
 const BODY_TAG_NAME = "BODY"
 const DEFAULT_WIDTH = 520
-const MIN_HEIGHT = 100
+const MIN_HEIGHT = 10
 const DEFAULT_RESIZE_GRID: [number, number] = [20, 20]
 const ANT_MODAL_SELECTOR = ".ant-modal"
 const ANT_MODAL_BODY_SELECTOR = ".ant-modal-body"
@@ -87,6 +87,12 @@ const Renderer: FC<TRendererProps> = (props) => {
 	const store = useRef<{ modalProps: ModalProps }>({ modalProps: {} })
 	const afterClose = () => {
 		destroy()
+		if (!props.destroyOnClose && rndRef.current.resizable) {
+			const { resizable } = rndRef.current.resizable
+			const antModalNode = resizable.querySelector(ANT_MODAL_SELECTOR)
+			antModalNode.style.top = '0px'
+			antModalNode.style.left = '0px'
+		}
 		typeof resetProps.afterClose === "function" && resetProps.afterClose()
 	}
 	useEffect(() => {
@@ -104,9 +110,6 @@ const Renderer: FC<TRendererProps> = (props) => {
 		}
 		store.current.modalProps = modalProps
 		setShow(props.visible)
-		return () => {
-			console.log('Renderer')
-		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [props.visible])
 
@@ -355,7 +358,6 @@ export const Modal: FC<TModalProps> = (props) => {
 		return null
 	}
 	if (!drag) {
-		console.log('AModal')
 		return <AModal {...modalProps}>
 			{children}
 		</AModal>
