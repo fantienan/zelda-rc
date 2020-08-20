@@ -1,10 +1,11 @@
 {
   "name": "zelda-rc",
-  "version": "0.2.3",
+  "version": "0.2.5",
   "private": false,
   "main": "es/index.js",
   "module": "es/index.js",
   "types": "es/index.d.ts",
+  "license": "MIT",
   "keywords": [
     "Component",
     "UI",
@@ -30,7 +31,7 @@
     "sb": "start-storybook -p 6006 -s public",
     "sb:debug": "npm run storybook --debug-webpack",
     "sb:build": "build-storybook -s public",
-    "clean": "rimraf ./es",
+    "clean": "rimraf ./build",
     "copy": "node script/copy.js",
     "build:ts": "tsc -p tsconfig.build.json",
     "build:less": "cd script && gulp",

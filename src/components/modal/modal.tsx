@@ -55,6 +55,10 @@ export interface IBasiceModalProps {
 	 * 宽度
 	*/
 	width: number | string
+	/**
+	 * 点击弹窗以外的部分是否关闭弹窗
+	*/
+	closable?: boolean
 }
 export type TModalProps = Partial<IBasiceModalProps & ModalProps>
 
@@ -309,7 +313,8 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 	}
 	const getAModalWidth = () => {
 		if (visible === false && resizable && rndRef.current) {
-			const modalRect = rndRef.current.resizable.resizable.querySelector(ANT_MODAL_SELECTOR).getBoundingClientRect()
+			const node = rndRef.current.resizable.resizable.querySelector(ANT_MODAL_SELECTOR)
+			const modalRect = node ? node.getBoundingClientRect() : { width: DEFAULT_WIDTH }
 			return { width: modalRect.width }
 		}
 		return {
@@ -343,7 +348,7 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 	}</>
 }
 export const Modal: FC<TModalProps> = (props) => {
-	const { children, drag, rnd, resizable, ...modalProps } = props
+	const { children, drag, rnd, resizable, closable, ...modalProps } = props
 	const store = useRef<IStoreProps>({
 		id: null,
 		destroyFlag: false,
@@ -353,6 +358,24 @@ export const Modal: FC<TModalProps> = (props) => {
 		},
 		rndContainerCls: `${RND_CLS}-${parseInt((Math.random() * 1000000).toString())}`
 	})
+	function clickHandle(e: MouseEvent) {
+		if (!e.target || !props.visible) {
+			return
+		}
+		const target = e.target as HTMLElement
+		const node = target.closest(`.${store.current.rndContainerCls}`)
+		if (!node && typeof props.onCancel === "function") {
+			// @ts-ignore
+			props.onCancel(e)
+		}
+	}
+	useEffect(() => {
+		props.visible && closable && document.addEventListener('click', clickHandle)
+		return () => {
+			closable && document.removeEventListener('click', clickHandle)
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [props.visible])
 	// 初始化时不渲染
 	if (props.visible === undefined) {
 		return null
@@ -369,7 +392,8 @@ export const Modal: FC<TModalProps> = (props) => {
 Modal.defaultProps = {
 	drag: true,
 	resizable: false,
-	width: DEFAULT_WIDTH
+	width: DEFAULT_WIDTH,
+	closable: true
 }
 
 export default Modal;
