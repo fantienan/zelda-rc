@@ -10,7 +10,7 @@
 
 # production
 /build
-/es
+/dist
 /src/stories
 
 # misc

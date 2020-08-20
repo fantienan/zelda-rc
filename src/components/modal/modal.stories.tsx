@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'
+import React, { useState } from 'react'
 import { Button, Input } from 'antd'
 import { Story, Meta } from '@storybook/react/types-6-0'
 import Modal, { TModalProps } from './modal'
@@ -10,9 +10,7 @@ export default {
 
 const Template: Story<TModalProps> = (args, i) => {
 	const [visible, setVisible] = useState<any>()
-	const ref = useRef<any>()
 	return <>
-		<div ref={ref}></div>
 		<Button onClick={() => setVisible(true)}>click</Button>
 		<Modal
 			{...args}
@@ -20,10 +18,6 @@ const Template: Story<TModalProps> = (args, i) => {
 			onOk={() => setVisible(false)}
 			onCancel={() => setVisible(false)}
 			destroyOnClose
-			rnd={{
-				cancel: '.ant-modal-body'
-			}}
-			getContainer={() => ref.current}
 		>
 			<Input />
 		</Modal>

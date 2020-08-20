@@ -30,6 +30,9 @@ interface IRendererBasiceProps {
 	destroy: Function
 }
 type TRendererProps = TModalProps & IRendererBasiceProps
+type TEnhanceModalProps = {
+	store: IStoreProps
+} & TModalProps
 export interface IBasiceModalProps {
 	children?: React.ReactNode
 	/**
@@ -44,10 +47,6 @@ export interface IBasiceModalProps {
 	 * 改变弹框大小
 	*/
 	resizable: boolean
-	/**
-	 * Modal的显示隐藏
-	 */
-	visible: boolean
 	/**
 	 * 标题
 	 */
@@ -105,7 +104,9 @@ const Renderer: FC<TRendererProps> = (props) => {
 		}
 		store.current.modalProps = modalProps
 		setShow(props.visible)
-
+		return () => {
+			console.log('Renderer')
+		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [props.visible])
 
@@ -114,19 +115,12 @@ const Renderer: FC<TRendererProps> = (props) => {
 	</AModal>
 }
 
-export const Modal: FC<TModalProps> = (props) => {
-	const { children, drag, style, centered, rnd = {}, visible, resizable, ...resetProps } = props
-	const [update, forceupdate] = useState(1)
+const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
+	const { children, drag, style, centered, rnd = {}, store, visible, resizable, ...resetProps } = props
 	const rndRef = useRef<any>()
-	const store = useRef<IStoreProps>({
-		id: null,
-		destroyFlag: false,
-		portals: {
-			node: null,
-			id: `portal-id-${parseInt((Math.random() * 1000000).toString())}`
-		},
-		rndContainerCls: `${RND_CLS}-${parseInt((Math.random() * 1000000).toString())}`
-	})
+	const [update, forceupdate] = useState(1)
+
+	// 兼容requestAnimationFrame
 	const requestAnimationFrameFn = (
 		window.requestAnimationFrame ||
 		window.webkitRequestAnimationFrame ||
@@ -143,17 +137,19 @@ export const Modal: FC<TModalProps> = (props) => {
 		}
 	)
 
+	// 获取ant Modal
 	const fn = (cb: Function) => requestAnimationFrameFn(() => {
 		const modalNode = rndRef.current.resizable.resizable.querySelector(ANT_MODAL_SELECTOR)
 		if (!modalNode) {
 			fn(cb)
 			return
 		}
-		cancelAnimationFrameFn(store.current.id)
+		cancelAnimationFrameFn(store.id)
 		cb({ modalNode })
 	})
+
 	const delayTask = (): Promise<TDelayTask> => new Promise((resolve, reject) => {
-		store.current.id = fn(({ modalNode }: TDelayTask) => setTimeout(() => resolve({ modalNode }), DELAY))
+		store.id = fn(({ modalNode }: TDelayTask) => setTimeout(() => resolve({ modalNode }), DELAY))
 	})
 
 	const updateRnd = ({ width = 0, height = 0, x = 0, y = 0 }: IUpdate) => {
@@ -172,20 +168,21 @@ export const Modal: FC<TModalProps> = (props) => {
 		return position
 	}
 
+	// 创建传送门挂载的dom
 	const createDom = () => {
-		store.current.portals.node = (
+		store.portals.node = (
 			typeof resetProps.getContainer === "function" &&
 				resetProps.getContainer() instanceof HTMLElement ?
 				resetProps.getContainer() :
 				document.getElementsByTagName("body")[0]
 		)
-		const { id } = store.current.portals
-		store.current.portals.node.classList.add(id)
-		if (store.current.portals.node.tagName !== BODY_TAG_NAME && !document.querySelector(`.${id}`)) {
-			document.getElementsByTagName("body")[0].appendChild(store.current.portals.node)
+		const { id } = store.portals
+		store.portals.node.classList.add(id)
+		if (store.portals.node.tagName !== BODY_TAG_NAME && !document.querySelector(`.${id}`)) {
+			document.getElementsByTagName("body")[0].appendChild(store.portals.node)
 		}
 	}
-
+	// 更新rnd props 
 	const updateRndProps = () => ({
 		width: window.innerWidth - DEFAULT_X,
 		height: window.innerHeight - DEFAULT_Y,
@@ -195,7 +192,7 @@ export const Modal: FC<TModalProps> = (props) => {
 
 	// Modal显示之后
 	const afterShowModalFn = async () => {
-		if (rndRef.current && drag) {
+		if (rndRef.current) {
 			updateRnd(updateRndProps())
 			document.getElementsByTagName('body')[0].classList.add(OVERFLOW_CLS)
 			rndRef.current.resizable.resizable.classList.add(INIT_TIME_CLS)
@@ -216,56 +213,38 @@ export const Modal: FC<TModalProps> = (props) => {
 	}
 	// Modal隐藏之后
 	const afterHideModalFn = () => {
-		if (rndRef.current && drag) {
+		if (rndRef.current) {
 			document.getElementsByTagName('body')[0].classList.add(OVERFLOW_CLS)
+			const { resizable } = rndRef.current.resizable
+			const antModalNode = resizable.querySelector(ANT_MODAL_SELECTOR)
+			// visible为false时 切换drag为true
+			if (!antModalNode) {
+				updateRnd({
+					x: - DEFAULT_X,
+					y: - DEFAULT_Y
+				})
+				return
+			}
 			updateRnd({
 				...updateRndProps(),
 				height: window.innerHeight + TOLERANCE,
 				y: 0
 			})
-			const { resizable } = rndRef.current.resizable
 			resizable.classList.remove(BOX_SHADOW)
 			resizable.classList.remove(REACT_DRAGGBLE_DRAGGED)
 			resizable.classList.add(DESTROY_TIME_CLS)
 			const { x, y } = resizable.getBoundingClientRect()
-			const antModalNode = resizable.querySelector(ANT_MODAL_SELECTOR)
 			if (antModalNode) {
 				resizable.querySelector(ANT_MODAL_SELECTOR).style.top = y + 'px'
 				resizable.querySelector(ANT_MODAL_SELECTOR).style.left = x + 'px'
 			}
 		}
 	}
-	useEffect(() => {
-		if (rndRef.current) {
-			visible === true && afterShowModalFn()
-			visible === false && afterHideModalFn()
-		}
-		return () => {
-			try {
-				if (store.current.portals.node) {
-					document.getElementsByTagName("body")[0].removeChild(store.current.portals.node)
-					// eslint-disable-next-line react-hooks/exhaustive-deps
-					store.current.portals.node = null
-				}
-			} catch (e) { }
-		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [props.visible, props.drag])
-	if (!drag) {
-		return <AModal visible={visible} {...resetProps}>
-			{children}
-		</AModal>
-	}
-	if (visible === undefined || store.current.destroyFlag) {
-		store.current.destroyFlag = false
-		return null
-	}
-	createDom()
 	const destroy = () => {
 		document.getElementsByTagName('body')[0].classList.remove(OVERFLOW_CLS)
 		// 销毁组件
 		if (resetProps.destroyOnClose) {
-			store.current.destroyFlag = true
+			store.destroyFlag = true
 			forceupdate(update + 1)
 			return
 		}
@@ -275,7 +254,30 @@ export const Modal: FC<TModalProps> = (props) => {
 			y: - DEFAULT_Y
 		})
 	}
-
+	useEffect(() => {
+		if (rndRef.current) {
+			if (visible) {
+				afterShowModalFn()
+			} else if (visible === false) {
+				afterHideModalFn()
+			}
+		}
+		return () => {
+			try {
+				if (store.portals.node) {
+					document.getElementsByTagName("body")[0].removeChild(store.portals.node)
+					// eslint-disable-next-line react-hooks/exhaustive-deps
+					store.portals.node = null
+				}
+			} catch (e) { }
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [props.visible, props.drag])
+	if (visible === undefined || store.destroyFlag) {
+		store.destroyFlag = false
+		return null
+	}
+	createDom()
 	const getRndStyle = () => {
 		const s: TKV = {
 			top: rnd.style?.top,
@@ -315,7 +317,7 @@ export const Modal: FC<TModalProps> = (props) => {
 		createPortal(
 			<Rnd
 				ref={rndRef}
-				className={[RND_CLS, store.current.rndContainerCls].join(" ")}
+				className={[RND_CLS, store.rndContainerCls].join(" ")}
 				style={getRndStyle()}
 				minWidth={resetProps.width}
 				minHeight={MIN_HEIGHT}
@@ -333,9 +335,34 @@ export const Modal: FC<TModalProps> = (props) => {
 					{children}
 				</Renderer>
 			</Rnd>,
-			store.current.portals.node || document.getElementsByTagName("body")[0]
+			store.portals.node || document.getElementsByTagName("body")[0]
 		)
 	}</>
+}
+export const Modal: FC<TModalProps> = (props) => {
+	const { children, drag, rnd, resizable, ...modalProps } = props
+	const store = useRef<IStoreProps>({
+		id: null,
+		destroyFlag: false,
+		portals: {
+			node: null,
+			id: `portal-id-${parseInt((Math.random() * 1000000).toString())}`
+		},
+		rndContainerCls: `${RND_CLS}-${parseInt((Math.random() * 1000000).toString())}`
+	})
+	// 初始化时不渲染
+	if (props.visible === undefined) {
+		return null
+	}
+	if (!drag) {
+		console.log('AModal')
+		return <AModal {...modalProps}>
+			{children}
+		</AModal>
+	}
+	return <EnhanceModal {...props} store={store.current} >
+		{children}
+	</EnhanceModal>
 }
 Modal.defaultProps = {
 	drag: true,
@@ -344,3 +371,4 @@ Modal.defaultProps = {
 }
 
 export default Modal;
+
