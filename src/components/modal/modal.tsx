@@ -44,7 +44,7 @@ export interface IBasiceModalProps {
 	*/
 	rnd?: Props
 	/**
-	 * 改变弹框大小
+	 * 改变弹框大小，`只在drag=true时生效`
 	*/
 	resizable: boolean
 	/**
@@ -56,9 +56,17 @@ export interface IBasiceModalProps {
 	*/
 	width: number | string
 	/**
-	 * 点击弹窗以外的部分是否关闭弹窗
+	 * 点击弹窗以外的部分是否关闭弹窗，`只在drag=true时生效`
 	*/
 	closable?: boolean
+	/**
+	 * 设置 Modal 的 z-index
+	*/
+	zIndex?: number
+	/**
+	 * 在点击弹窗以外的部分时阻止关闭Modal的className，`只在drag=true时生效`
+	*/
+	cancelClosableClassName?: string | string[]
 }
 export type TModalProps = Partial<IBasiceModalProps & ModalProps>
 
@@ -84,6 +92,8 @@ const ANT_MODAL_SELECTOR = ".ant-modal"
 const ANT_MODAL_BODY_SELECTOR = ".ant-modal-body"
 const ANT_MODAL_HEADER_SELECTOR = ".ant-modal-header"
 const ANT_MODAL_FOOTER_SELECTOR = ".ant-modal-footer"
+const RND_Z_INDEX = 1000
+const CANCEL_CLOSABLE_CLASS_NAME = "cancel-closable"
 
 const Renderer: FC<TRendererProps> = (props) => {
 	const { children, rndRef, visible, destroy, ...resetProps } = props
@@ -291,6 +301,7 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 			left: rnd.style?.left,
 			bottom: rnd.style?.bottom,
 			right: rnd.style?.right,
+			zIndex: rnd.style?.zIndex || props.zIndex || RND_Z_INDEX
 		}
 		if (!resizable) {
 			s.overflow = "hidden"
@@ -348,7 +359,7 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 	}</>
 }
 export const Modal: FC<TModalProps> = (props) => {
-	const { children, drag, rnd, resizable, closable, ...modalProps } = props
+	const { children, drag, rnd, resizable, closable, cancelClosableClassName, ...modalProps } = props
 	const store = useRef<IStoreProps>({
 		id: null,
 		destroyFlag: false,
@@ -363,11 +374,23 @@ export const Modal: FC<TModalProps> = (props) => {
 			return
 		}
 		const target = e.target as HTMLElement
-		const node = target.closest(`.${store.current.rndContainerCls}`)
-		if (!node && typeof props.onCancel === "function") {
+		let excludes = typeof cancelClosableClassName === "string" ?
+			[cancelClosableClassName] :
+			Array.isArray(cancelClosableClassName) ?
+				cancelClosableClassName :
+				[]
+		let close = true	
+		for (let i = 0; i < excludes.length; i++) {
+			const cls = excludes[i]
+			if (target.closest(`.${cls}`)) {
+				close = false
+				break
+			}
+		}
+		if (close && !target.closest(`.${store.current.rndContainerCls}`) && typeof props.onCancel === "function") {
 			// @ts-ignore
 			props.onCancel(e)
-		}
+		}	
 	}
 	useEffect(() => {
 		props.visible && closable && document.addEventListener('click', clickHandle)
@@ -393,7 +416,9 @@ Modal.defaultProps = {
 	drag: true,
 	resizable: false,
 	width: DEFAULT_WIDTH,
-	closable: true
+	closable: true,
+	zIndex: RND_Z_INDEX,
+	cancelClosableClassName: CANCEL_CLOSABLE_CLASS_NAME
 }
 
 export default Modal;
