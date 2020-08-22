@@ -1,9 +1,0 @@
-.storybook
-storybook-static
-.vscode
-node_modules
-build/**/*
-public
-scripts
-**/*.d.ts
-jest.test.js

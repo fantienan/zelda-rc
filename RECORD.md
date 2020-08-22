@@ -18,10 +18,44 @@
 14. 初始`setupTests.ts`配置文件，添加`@testing-library/jest-dom`
 15. 添加[eslint](.eslintrc.js)
     - [react 项目中添加 eslint](https://www.cnblogs.com/lyraLee/p/11982208.html)
-    - `yarn add eslint --dev`
+    - `npm i eslint -S -D`
     - `npx eslint --init`
 16. 添加`eslint-plugin-testing-library`，`eslint-plugin-jest-dom`
-    - `yarn add eslint-plugin-jest-dom eslint-plugin-testing-library --dev`
+    - `npm i eslint-plugin-jest-dom eslint-plugin-testing-library --S -D`
     - 修改`eslint`的相关[配置](https://www.jianshu.com/p/421c66111c06)
 17. 添加eslint[忽略文件](.eslintignore)
-18. 添加publish钩子
+18. 添加publish钩子，发布前进行eslint检查、运行单元测试、打包
+    - https://eslint.org/docs/user-guide/command-line-interface#-max-warnings
+    - https://create-react-app.dev/docs/running-tests/#continuous-integration
+```js
+    // package.json
+    + "lint": "eslint --ext js,ts,tsx src --max-warnings 5",
+    + "test:nowatch": "cross-env CI=true react-scripts test",
+    + "prepublishOnly": "npm run test:nowatch && npm run lint && npm run build"
+```
+19. 添加git commit钩子
+    - `npm i husky -S -D`
+    - `npm i commitizen -g`
+    - `commitizen init cz-conventional-changelog --save-dev --save-exact`
+    - [husky](https://github.com/typicode/husky#readme)
+    - [commitizen](https://github.com/commitizen/cz-cli)
+    - [cz-conventional-changelog](https://github.com/commitizen/cz-conventional-changelog)
+```js
+    // package.json
+    + "husky": {
+    +     "hooks": {
+    +         "pre-commit": "npm run test:nowatch && npm run lint"
+    +     }
+    + },
+    + "config": {
+    +     "commitizen": {
+    +     "path": "./node_modules/cz-conventional-changelog"
+    +     }
+    + }
+```
+
+20. cra 和 storybook内置了eslint，所以删除15、16、17
+
+21. CI CD
+    - [travis](https://travis-ci.com/)：测试和部署项目的最简单方法。
+    - 
