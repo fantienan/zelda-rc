@@ -1,21 +1,28 @@
 {
   "name": "zelda-rc",
-  "version": "0.2.7",
+  "version": "0.2.10",
   "private": false,
   "main": "es/index.js",
   "module": "es/index.js",
   "types": "es/index.d.ts",
   "license": "MIT",
+  "description": "React components library",
+  "author": "fantienan",
   "keywords": [
     "Component",
     "UI",
     "React",
-    "storybook"
+    "storybook",
+    "ant design"
   ],
+  "homepage": "",
   "repository": {
     "type": "git",
     "url": "https://github.com/fantienan/zelda-rc"
   },
+  "files": [
+    "dist"
+  ],
   "peerDependencies": {
     "antd": ">=4.2.0",
     "react": ">=16.8.0",
@@ -31,11 +38,12 @@
     "sb": "start-storybook -p 6006 -s public",
     "sb:debug": "npm run storybook --debug-webpack",
     "sb:build": "build-storybook -s public",
-    "clean": "rimraf ./build",
-    "copy": "node script/copy.js",
+    "clean": "rimraf ./dist",
+    "copy": "node scripts/copy.js",
     "build:ts": "tsc -p tsconfig.build.json",
-    "build:less": "cd script && gulp",
-    "build": "npm run clean && npm run build:ts && npm run build:less && npm run copy"
+    "build:less": "cd scripts && gulp",
+    "build": "npm run clean && npm run build:ts && npm run build:less && npm run copy",
+    "prepublish": "npm run build"
   },
   "eslintConfig": {
     "extends": "react-app"
@@ -65,6 +73,7 @@
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.3.2",
     "@testing-library/user-event": "^7.1.2",
+    "@types/fs-extra": "^9.0.1",
     "@types/jest": "^24.0.0",
     "@types/node": "^12.0.0",
     "@types/react": "^16.9.0",
@@ -74,6 +83,14 @@
     "babel-loader": "^8.1.0",
     "babel-plugin-import": "^1.13.0",
     "craco-less": "^1.17.0",
+    "eslint": "^7.7.0",
+    "eslint-config-airbnb": "^18.2.0",
+    "eslint-plugin-import": "^2.22.0",
+    "eslint-plugin-jest-dom": "^3.1.7",
+    "eslint-plugin-jsx-a11y": "^6.3.1",
+    "eslint-plugin-react": "^7.20.6",
+    "eslint-plugin-react-hooks": "^4.1.0",
+    "eslint-plugin-testing-library": "^3.6.0",
     "fs-extra": "^9.0.1",
     "gulp": "^4.0.2",
     "gulp-clean-css": "^4.3.0",

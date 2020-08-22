@@ -6,9 +6,9 @@ const less = require("gulp-less");
 // // var rename = require("gulp-rename");
 function convertLess() {
   return src("../src/components/**/*.less")
-    .pipe(dest("../build/es"))
+    .pipe(dest("../dist/es"))
     .pipe(less())
-    .pipe(dest("../build/es"))
+    .pipe(dest("../dist/es"))
 }
 
 exports.default = parallel(convertLess);
