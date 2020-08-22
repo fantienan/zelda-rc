@@ -58,4 +58,4 @@
 
 21. CI CD
     - [travis](https://travis-ci.com/)：测试和部署项目的最简单方法。
-    - 
+    - 添加`.travis.yml`
