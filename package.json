@@ -50,8 +50,7 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "npm run test:nowatch && npm run lint",
-      "commit": "git-cz"
+      "pre-commit": "npm run test:nowatch && npm run lint"
     }
   },
   "eslintConfig": {
