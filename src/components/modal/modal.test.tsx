@@ -1,18 +1,38 @@
 import React from 'react'
 import { render } from '@testing-library/react'
-import Modal from './modal'
+import Modal, {RND_CLS} from './modal'
 
-describe("测试弹窗组件", () => {
-    it("测试弹出不可拖拽的弹窗", () => {
-        const wapper = render(<Modal drag={false} visible={true} className="xxx"> 基础的Modal </Modal>)
-        const element = wapper.getByText('基础的Modal')
+describe("test Modal", () => {
+    it("测试弹窗visible属性", () => {
+        const wrapper = render(<Modal drag={false} visible={true}> 基础的Modal </Modal>)
+        const element = wrapper.getByText('基础的Modal')
         expect(element).toBeInTheDocument()
+        expect(element.closest(`.${RND_CLS}`)).not.toBeInTheDocument()
     })
-    it("测试children", () => {
-        const wapper = render(<Modal visible>
-            子元素
-        </Modal>)
-        const element = wapper.queryByText('子元素')
+    it("测试弹窗children属性", () => {
+        const wrapper = render(<Modal visible>子元素</Modal>)
+        const element = wrapper.getByText('子元素')
         expect(element).toBeTruthy()
+        expect(element.closest(`.${RND_CLS}`)).toBeInTheDocument()
+    })
+    it("测试弹窗className", () => {
+        const wrapper = render(<Modal visible={true} className="basice-modal">
+            基础弹窗
+        </Modal>)
+        const element = wrapper.getByText('基础弹窗')
+        expect(element.closest('.basice-modal')).toBeInTheDocument()
+    })
+    it("测试弹窗drag属性", () => {
+
+    })
+    it("测试弹窗title属性", () => {
+        const wrapper = render(<Modal
+            title="标题"
+            visible={true}
+        >
+            基础弹窗
+        </Modal>)
+        const element = wrapper.getByText('标题')
+        expect(element).toBeInTheDocument()
     })
 })

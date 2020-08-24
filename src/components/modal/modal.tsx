@@ -70,7 +70,7 @@ export interface IBasiceModalProps {
 }
 export type TModalProps = Partial<IBasiceModalProps & ModalProps>
 
-const RND_CLS = "rnd-container"
+export const RND_CLS = "rnd-container"
 const BOX_SHADOW = "box-shadow"
 const REACT_DRAGGBLE_DRAGGED = "react-draggable-dragged"
 const INIT_TIME_CLS = "init-time"
@@ -156,6 +156,10 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 
 	// 获取ant Modal
 	const fn = (cb: Function) => requestAnimationFrameFn(() => {
+		if (!rndRef.current) {
+			fn(cb)
+			return
+		}
 		const modalNode = rndRef.current.resizable.resizable.querySelector(ANT_MODAL_SELECTOR)
 		if (!modalNode) {
 			fn(cb)
