@@ -27,7 +27,7 @@
 18. 添加publish钩子，发布前进行eslint检查、运行单元测试、打包
     - https://eslint.org/docs/user-guide/command-line-interface#-max-warnings
     - https://create-react-app.dev/docs/running-tests/#continuous-integration
-```js
+```bash
     // package.json
     + "lint": "eslint --ext js,ts,tsx src --max-warnings 5",
     + "test:nowatch": "cross-env CI=true react-scripts test",
@@ -40,7 +40,7 @@
     - [husky](https://github.com/typicode/husky#readme)
     - [commitizen](https://github.com/commitizen/cz-cli)
     - [cz-conventional-changelog](https://github.com/commitizen/cz-conventional-changelog)
-```js
+```bash
     // package.json
     + "husky": {
     +     "hooks": {
@@ -57,9 +57,10 @@
 
 20. cra 和 storybook 内置了eslint，所以删除15、16、17
 
-21. CI CD
+21. 实现CI CD
     - [github pages](https://pages.github.com/)搭建组件库静态站点。
     - [travis](https://travis-ci.com/)：测试和部署项目的最简单方法；实现自动化不是组件库静态站点。
     - [travis-ci github pages docs](https://docs.travis-ci.com/user/deployment/pages/)
     - 添加`.travis.yml`
     - 生成github token
+    - 组件库地址 https://fantienan.github.io/zelda-rc

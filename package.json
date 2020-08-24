@@ -1,6 +1,6 @@
 {
   "name": "zelda-rc",
-  "version": "0.2.11",
+  "version": "0.2.12",
   "private": false,
   "main": "es/index.js",
   "module": "es/index.js",
@@ -15,7 +15,7 @@
     "storybook",
     "ant design"
   ],
-  "homepage": "",
+  "homepage": "https://fantienan.github.io/zelda-rc",
   "repository": {
     "type": "git",
     "url": "https://github.com/fantienan/zelda-rc"
@@ -50,7 +50,7 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "npm run test:nowatch && npm run lint && npm run sb:build"
+      "pre-commit": "npm run test:nowatch && npm run lint"
     }
   },
   "eslintConfig": {
