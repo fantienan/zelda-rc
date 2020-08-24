@@ -55,8 +55,11 @@
     + }
 ```
 
-20. cra 和 storybook内置了eslint，所以删除15、16、17
+20. cra 和 storybook 内置了eslint，所以删除15、16、17
 
 21. CI CD
-    - [travis](https://travis-ci.com/)：测试和部署项目的最简单方法。
+    - [github pages](https://pages.github.com/)搭建组件库静态站点。
+    - [travis](https://travis-ci.com/)：测试和部署项目的最简单方法；实现自动化不是组件库静态站点。
+    - [travis-ci github pages docs](https://docs.travis-ci.com/user/deployment/pages/)
     - 添加`.travis.yml`
+    - 生成github token
