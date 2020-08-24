@@ -44,12 +44,13 @@
     // package.json
     + "husky": {
     +     "hooks": {
-    +         "pre-commit": "npm run test:nowatch && npm run lint"
+    +         "pre-commit": "npm run test:nowatch && npm run lint",
+    +         "commit": "git-cz"
     +     }
     + },
     + "config": {
     +     "commitizen": {
-    +     "path": "./node_modules/cz-conventional-changelog"
+    +           "path": "./node_modules/cz-conventional-changelog"
     +     }
     + }
 ```

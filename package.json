@@ -46,11 +46,12 @@
     "build:ts": "tsc -p tsconfig.build.json",
     "build:less": "cd scripts && gulp",
     "build": "npm run clean && npm run build:ts && npm run build:less && npm run copy",
-    "prepublishOnly": "npm run test:nowatch && npm run lint && npm run build"
+    "prepublishOnly": "npm run test:nowatch && npm run lint && npm run build  "
   },
   "husky": {
     "hooks": {
-      "pre-commit": "npm run test:nowatch && npm run lint"
+      "pre-commit": "npm run test:nowatch && npm run lint",
+      "commit": "git-cz"
     }
   },
   "eslintConfig": {
