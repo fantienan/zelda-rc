@@ -1,6 +1,7 @@
 import React from 'react'
 import { render } from '@testing-library/react'
-import Modal, {RND_CLS} from './modal'
+import Modal from './modal'
+import { RND_CLS } from './config'
 
 describe("test Modal", () => {
     it("测试弹窗visible属性", () => {

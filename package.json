@@ -1,10 +1,10 @@
 {
   "name": "zelda-rc",
-  "version": "0.2.12",
+  "version": "0.2.16",
   "private": false,
-  "main": "es/index.js",
-  "module": "es/index.js",
-  "types": "es/index.d.ts",
+  "main": "dist/es/index.js",
+  "module": "dist/es/index.js",
+  "types": "dist/es/index.d.ts",
   "license": "MIT",
   "description": "React components library",
   "author": "fantienan",
@@ -41,11 +41,10 @@
     "sb:debug": "npm run storybook --debug-webpack",
     "sb:build": "build-storybook -s public",
     "clean": "rimraf ./dist",
-    "copy": "node scripts/copy.js",
     "lint": "eslint --ext js,ts,tsx src/components --max-warnings 5",
     "build:ts": "tsc -p tsconfig.build.json",
     "build:less": "cd scripts && gulp",
-    "build": "npm run clean && npm run build:ts && npm run build:less && npm run copy",
+    "build": "npm run clean && npm run build:ts && npm run build:less",
     "prepublishOnly": "npm run test:nowatch && npm run lint && npm run build"
   },
   "husky": {

@@ -3,6 +3,30 @@ import { createPortal } from "react-dom"
 import { Modal as AModal } from "antd"
 import { Rnd, Props, RndResizeCallback } from 'react-rnd'
 import { ModalProps } from 'antd/lib/modal'
+import {
+    RND_CLS,
+    BOX_SHADOW,
+    REACT_DRAGGBLE_DRAGGED,
+    INIT_TIME_CLS,
+    DESTROY_TIME_CLS,
+    OVERFLOW_CLS,
+    STYLE,
+    TOLERANCE,
+    DEFAULT_X,
+    DEFAULT_Y,
+    DELAY,
+    BODY_TAG_NAME,
+    DEFAULT_WIDTH,
+    MIN_HEIGHT,
+    DEFAULT_RESIZE_GRID,
+    ANT_MODAL_SELECTOR,
+    ANT_MODAL_BODY_SELECTOR,
+    ANT_MODAL_HEADER_SELECTOR,
+    ANT_MODAL_FOOTER_SELECTOR,
+    RND_Z_INDEX,
+    CANCEL_CLOSABLE_CLASS_NAME,
+    RND_CANCEL_SELECTOR
+} from './config'
 import './style/index'
 
 type TDelayTask = { modalNode: HTMLElement }
@@ -70,30 +94,7 @@ export interface IBasiceModalProps {
 }
 export type TModalProps = Partial<IBasiceModalProps & ModalProps>
 
-export const RND_CLS = "rnd-container"
-const BOX_SHADOW = "box-shadow"
-const REACT_DRAGGBLE_DRAGGED = "react-draggable-dragged"
-const INIT_TIME_CLS = "init-time"
-const DESTROY_TIME_CLS = "destroy-time"
-const OVERFLOW_CLS = "overflow-hidden"
-const STYLE: CSSProperties = {
-	top: 0,
-	paddingBottom: 0
-}
-const TOLERANCE = 10
-const DEFAULT_X = 0
-const DEFAULT_Y = 100
-const DELAY = 500
-const BODY_TAG_NAME = "BODY"
-const DEFAULT_WIDTH = 520
-const MIN_HEIGHT = 10
-const DEFAULT_RESIZE_GRID: [number, number] = [20, 20]
-const ANT_MODAL_SELECTOR = ".ant-modal"
-const ANT_MODAL_BODY_SELECTOR = ".ant-modal-body"
-const ANT_MODAL_HEADER_SELECTOR = ".ant-modal-header"
-const ANT_MODAL_FOOTER_SELECTOR = ".ant-modal-footer"
-const RND_Z_INDEX = 1000
-const CANCEL_CLOSABLE_CLASS_NAME = "cancel-closable"
+
 
 const Renderer: FC<TRendererProps> = (props) => {
 	const { children, rndRef, visible, destroy, ...resetProps } = props
@@ -412,7 +413,11 @@ export const Modal: FC<TModalProps> = (props) => {
 			{children}
 		</AModal>
 	}
-	return <EnhanceModal {...props} store={store.current} >
+	const rndCnf = !rnd?.cancel ? {
+		...rnd,
+		cancel: RND_CANCEL_SELECTOR
+	} : rnd
+	return <EnhanceModal {...props} store={store.current} rnd={rndCnf}>
 		{children}
 	</EnhanceModal>
 }
