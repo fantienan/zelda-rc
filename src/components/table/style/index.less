@@ -1,0 +1,62 @@
+.drag-column-table {
+  position: relative;
+  .custom-drag-layer {
+    position: fixed;
+    pointer-events: none;
+    z-index: 100;
+    border: 1px solid #f0f0f0;
+    top: 0;
+    left: 0;
+    background: #fafafa;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .ant-table-thead {
+    user-select: none;
+    .ant-table-cell {
+      padding: 0 !important;
+      .drag-item.hover-active {
+        background-color: #f0f0f0;
+      }
+      &:not([rowspan]) .drag-item {
+        padding: 16px;
+      }
+    }
+    .ant-table-cell[rowspan] {
+      .drag-item {
+        display: flex;
+        align-items: center;
+        padding-left: 16px;
+      }
+    }
+  }
+}
+
+.react-resizable {
+  position: relative;
+  background-clip: padding-box;
+}
+
+.react-resizable-handle {
+  position: absolute;
+  width: 10px;
+  height: 100%;
+  bottom: 0;
+  right: -5px;
+  cursor: col-resize !important;
+  z-index: 1;
+}
+
+.react-resizable-grid-proxy {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  background: gray;
+  opacity: 0.3;
+  border: solid 1px black;
+  z-index: 100000000;
+  box-sizing: border-box;
+  display: none;
+}

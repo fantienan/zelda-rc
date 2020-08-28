@@ -51,7 +51,7 @@ babel: {
             "import",
             {
                 "libraryName": "zelda",
-                "libraryDirectory": "es",
+                "libraryDirectory": "dist/es",
                 "style": "css" // true
             }
         ]

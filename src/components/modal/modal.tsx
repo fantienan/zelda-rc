@@ -1,4 +1,4 @@
-import React, { FC, CSSProperties, RefObject, useRef, useEffect, useState } from "react"
+import React, { FC, CSSProperties, RefObject, ReactNode, useRef, useEffect, useState } from "react"
 import { createPortal } from "react-dom"
 import { Modal as AModal } from "antd"
 import { Rnd, Props, RndResizeCallback } from 'react-rnd'
@@ -58,7 +58,7 @@ type TEnhanceModalProps = {
 	store: IStoreProps
 } & TModalProps
 export interface IBasiceModalProps {
-	children?: React.ReactNode
+	children?: ReactNode
 	/**
 	 * 拖拽移动
 	*/
@@ -74,7 +74,7 @@ export interface IBasiceModalProps {
 	/**
 	 * 标题
 	 */
-	title: React.ReactNode | string
+	title: ReactNode | string
 	/**
 	 * 宽度
 	*/
@@ -379,14 +379,14 @@ export const Modal: FC<TModalProps> = (props) => {
 			return
 		}
 		const target = e.target as HTMLElement
-		let excludes = typeof cancelClosableClassName === "string" ?
+		let excludes = typeof cancelClosableClassName === "string" && !!cancelClosableClassName.trim() ?
 			[cancelClosableClassName] :
-			Array.isArray(cancelClosableClassName) ?
+			Array.isArray(cancelClosableClassName) && cancelClosableClassName.filter(v => v.toString().trim()).length ?
 				cancelClosableClassName :
 				[]
 		let close = true	
 		for (let i = 0; i < excludes.length; i++) {
-			const cls = excludes[i]
+			const cls = excludes[i].toString().trim()
 			if (target.closest(`.${cls}`)) {
 				close = false
 				break
