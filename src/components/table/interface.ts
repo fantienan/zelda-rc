@@ -1,26 +1,20 @@
 import { ReactNodeArray, RefObject, SyntheticEvent, ReactNode } from 'react'
 import { ResizeCallbackData } from 'react-resizable'
-import { TableProps, ColumnsType, ColumnType } from 'antd/lib/table'
+import { ColumnsType, ColumnType } from 'antd/lib/table'
+import { ITableProps } from './table'
 
-export interface ITableProps extends TableProps<RecordType> {
-	/**
-	 * 拖拽改变列的顺序
-	*/
-    dragColumn?: boolean
-    /**
-     * 拖拽改变列宽
-    */
-    resizableColumn?: boolean
-}
-export type RecordType = any
 export type KV<T = any> = {
     [k: string]: T
 }
+
 export interface ColumnGroupType<RecordType> extends Omit<ColumnType<RecordType>, 'dataIndex'> {
     children: ColumnsType<RecordType>;
 }
-export type TColumn = (ColumnGroupType<RecordType> | ColumnType<RecordType>) & {
-    children?: TColumn[]
+export type TColumn<RecordType = any> = (
+    | ColumnGroupType<RecordType>
+    | ColumnType<RecordType>
+) & {
+    children?: TColumn<RecordType>[]
     state?: TState
 }
 export interface IStoreProps {
@@ -37,8 +31,7 @@ export type TState = {
 export type TEnhanceColumn = {
     state: TState
 } & TColumn
-export interface IEnhanceTableProps extends ITableProps {
-    columns: TColumn[]
+export interface IEnhanceTableProps extends ITableProps<any> {
     store: IStoreProps
 }
 
@@ -54,10 +47,12 @@ export interface IHeaderCellProps {
     width?: number
     children: ReactNodeArray
     state: TState
+    className: string
 }
 
 export interface IRenderDragProviderItem {
     state: TState,
     title: ReactNode,
-    node?: JSX.Element
+    node?: JSX.Element,
+    className: string
 }

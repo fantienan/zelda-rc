@@ -2,6 +2,8 @@ import React, { useState } from 'react'
 import { Button, Input } from 'antd'
 import { Story, Meta } from '@storybook/react/types-6-0'
 import Modal, { TModalProps } from './modal'
+import "../../common.css"
+
 export default {
 	title: 'Example/Modal',
 	component: Modal

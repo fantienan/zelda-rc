@@ -52,18 +52,18 @@ export const columns = [
     dataIndex: 'name',
     key: 'name',
     width: 100,
-    // fixed: 'left',
-    // filters: [
-    //   {
-    //     text: 'Joe',
-    //     value: 'Joe',
-    //   },
-    //   {
-    //     text: 'John',
-    //     value: 'John',
-    //   },
-    // ],
-    // onFilter: (value, record) => record.name.indexOf(value) === 0,
+    fixed: 'left',
+    filters: [
+      {
+        text: 'Joe',
+        value: 'Joe',
+      },
+      {
+        text: 'John',
+        value: 'John',
+      },
+    ],
+    onFilter: (value, record) => record.name.indexOf(value) === 0,
   },
   {
     title: 'Company',
@@ -86,7 +86,7 @@ export const columns = [
     dataIndex: 'gender',
     key: 'gender',
     width: 80,
-    // fixed: 'right',
+    fixed: 'right',
   },
   {
     title: 'Other',
@@ -124,7 +124,7 @@ export const columns = [
         dataIndex: 'age',
         key: 'age',
         width: 150,
-        // sorter: (a, b) => a.age - b.age,
+        sorter: (a, b) => a.age - b.age,
       },
     ],
   },

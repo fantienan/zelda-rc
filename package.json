@@ -1,6 +1,6 @@
 {
   "name": "zelda-rc",
-  "version": "0.2.17",
+  "version": "0.3.0",
   "private": false,
   "main": "dist/es/index.js",
   "module": "dist/es/index.js",
@@ -29,7 +29,7 @@
     "react-dom": ">=16.8.0"
   },
   "dependencies": {
-    "eslint": "^6.6.0",
+    "@types/react-window": "^1.8.2",
     "react-rnd": "^10.2.1"
   },
   "scripts": {
@@ -110,7 +110,10 @@
     "react-scripts": "3.4.3",
     "rimraf": "^3.0.2",
     "ts-node": "^8.10.2",
-    "typescript": "~3.7.2"
+    "typescript": "~3.7.2",
+    "eslint": "^6.6.0",
+    "react-window": "^1.8.5",
+    "rc-resize-observer": "^0.2.3"
   },
   "config": {
     "commitizen": {
