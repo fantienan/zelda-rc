@@ -1,4 +1,4 @@
-import React, { FC, useState, useEffect, useRef, useMemo } from 'react'
+import React, { FC, useState, useEffect, useRef, /* useMemo */ } from 'react'
 import { Table as ATable } from 'antd'
 import { Resizable } from 'react-resizable'
 // import { VariableSizeGrid as Grid } from 'react-window'
