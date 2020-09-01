@@ -52,7 +52,7 @@ export const columns = [
     dataIndex: 'name',
     key: 'name',
     width: 100,
-    fixed: 'left',
+    // fixed: 'left',
     filters: [
       {
         text: 'Joe',
@@ -86,7 +86,7 @@ export const columns = [
     dataIndex: 'gender',
     key: 'gender',
     width: 80,
-    fixed: 'right',
+    // fixed: 'right',
   },
   {
     title: 'Other',
