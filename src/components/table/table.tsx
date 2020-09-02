@@ -12,7 +12,7 @@ import {
 } from '@ant-design/icons'
 import DragProvider from './DragProvider'
 import {
-	ACCEPT, DRAG_TABLE_CLS, LEVEL_VALUE, CANCEL_FRAG_COLUMN_CLS, TRUE, FALSE,
+	ACCEPT, DRAG_TABLE_CLS, LEVEL_VALUE, CANCEL_FRAG_COLUMN_CLS, 
 	classNames, KEY_ALL, ROW_HEIGHT, DATA_ROW_CLASS_NAME, CONTAINER_CLASS, EXPORATION_TIME,
 	TR_SELECTED_CLS, PADDING_LEFT, CLASS_NAME, VALUE_KEY, PERFIX_ICON, DEFAULT_STATE,
 	VIRTUAL_GRID_BORDERED_CLS, ROW_HIGHLIGHT, VIRTUAL_GRID_CLS, VIRTUAL_TABLE_CELL_CLS,
@@ -116,10 +116,9 @@ const VirtualTable: FC<IVirtualTableProps> = (props) => {
 		paddingLeft,
 		valueKey,
 		loadingData,
-		children,
 		columns,
 		generateNode,
-		...tableProps
+		clearHighlight
 	} = props
 	const key = (props.pagination || {}).current || KEY_ALL
 	const [update, forceUpdate] = useState(0)
@@ -558,7 +557,7 @@ const EnhanceTable: FC<IEnhanceTableProps> = (props) => {
 			store.nodes = []
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [])
+	}, [rowHighlight])
 	useEffect(() => {
 		// @ts-ignore
 		setColumns(transformColumns(props.columns))
@@ -600,21 +599,23 @@ const EnhanceTable: FC<IEnhanceTableProps> = (props) => {
 			children
 	)
 	// 渲染器
-	const renderer = () => {
-		return virtual ?
-			<VirtualTable
-				{...tableProps}
-				columns={columns}
-				store={store}
-				rowHighlight={rowHighlight}
-				paddingLeft={paddingLeft}
-				valueKey={valueKey}
-				loadingData={loadingData}
-				generateNode={generateNode}
-			/> :
-			generateNode()
-	}
-	return renderer()
+	// const renderer = () => {
+	// 	return virtual ?
+	// 		<VirtualTable
+	// 			{...tableProps}
+	// 			columns={columns}
+	// 			store={store}
+	// 			rowHighlight={rowHighlight}
+	// 			paddingLeft={paddingLeft}
+	// 			valueKey={valueKey}
+	// 			loadingData={loadingData}
+	// 			generateNode={generateNode}
+	// 			clearHighlight={clearHighlight}
+	// 		/> :
+	// 		generateNode()
+	// }
+	// return renderer()
+	return generateNode()
 
 }
 export function Table<RecordType extends object = any>(props: ITableProps<RecordType>) {
@@ -656,13 +657,13 @@ export function Table<RecordType extends object = any>(props: ITableProps<Record
 }
 
 Table.defaultProps = {
-	dragColumn: TRUE,
-	resizableColumn: FALSE,
+	dragColumn: true,
+	resizableColumn: false,
 	className: CLASS_NAME,
-	bordered: TRUE,
-	loading: FALSE,
+	bordered: true,
+	loading: false,
 	size: 'small',
-	virtual: FALSE
+	virtual: false,
 }
 
 export default Table

@@ -4,28 +4,10 @@ import { Modal as AModal } from "antd"
 import { Rnd, Props, RndResizeCallback } from 'react-rnd'
 import { ModalProps } from 'antd/lib/modal'
 import {
-    RND_CLS,
-    BOX_SHADOW,
-    REACT_DRAGGBLE_DRAGGED,
-    INIT_TIME_CLS,
-    DESTROY_TIME_CLS,
-    OVERFLOW_CLS,
-    STYLE,
-    TOLERANCE,
-    DEFAULT_X,
-    DEFAULT_Y,
-    DELAY,
-    BODY_TAG_NAME,
-    DEFAULT_WIDTH,
-    MIN_HEIGHT,
-    DEFAULT_RESIZE_GRID,
-    ANT_MODAL_SELECTOR,
-    ANT_MODAL_BODY_SELECTOR,
-    ANT_MODAL_HEADER_SELECTOR,
-    ANT_MODAL_FOOTER_SELECTOR,
-    RND_Z_INDEX,
-    CANCEL_CLOSABLE_CLASS_NAME,
-    RND_CANCEL_SELECTOR
+	RND_CLS, BOX_SHADOW, REACT_DRAGGBLE_DRAGGED, INIT_TIME_CLS, DESTROY_TIME_CLS, DEFAULT_CANCEL_CLOSABLE_CLASS_NAMES,
+	OVERFLOW_CLS, STYLE, TOLERANCE, DEFAULT_X, DEFAULT_Y, DELAY, BODY_TAG_NAME, RND_CANCEL_SELECTOR,
+	DEFAULT_WIDTH, MIN_HEIGHT, DEFAULT_RESIZE_GRID, ANT_MODAL_SELECTOR, ANT_MODAL_BODY_SELECTOR,
+	ANT_MODAL_HEADER_SELECTOR, ANT_MODAL_FOOTER_SELECTOR, RND_Z_INDEX, CANCEL_CLOSABLE_CLASS_NAME,
 } from './config'
 import './style/index'
 
@@ -53,11 +35,11 @@ interface IRendererBasiceProps {
 	rndRef: RefObject<any>
 	destroy: Function
 }
-type TRendererProps = TModalProps & IRendererBasiceProps
+type TRendererProps = IModalProps & IRendererBasiceProps
 type TEnhanceModalProps = {
 	store: IStoreProps
-} & TModalProps
-export interface IBasiceModalProps {
+} & IModalProps
+export interface IModalProps extends ModalProps {
 	children?: ReactNode
 	/**
 	 * 拖拽移动
@@ -70,7 +52,7 @@ export interface IBasiceModalProps {
 	/**
 	 * 改变弹框大小，`只在drag=true时生效`
 	*/
-	resizable: boolean
+	resizable?: boolean
 	/**
 	 * 标题
 	 */
@@ -91,10 +73,11 @@ export interface IBasiceModalProps {
 	 * 在点击弹窗以外的部分时阻止关闭Modal的className，`只在drag=true时生效`
 	*/
 	cancelClosableClassName?: string | string[]
+	/**
+	 * 是否展示遮罩层，`drag=true`、`mask=true`时，点击弹窗以外弹窗将不会被关闭，这是设置`closable=true`将失效
+	*/
+	mask?: boolean
 }
-export type TModalProps = Partial<IBasiceModalProps & ModalProps>
-
-
 
 const Renderer: FC<TRendererProps> = (props) => {
 	const { children, rndRef, visible, destroy, ...resetProps } = props
@@ -337,8 +320,14 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 			width: resetProps.width
 		}
 	}
+	const maskWrapper = (children: ReactNode) => (
+		props.mask ?
+			<div className={visible ? "drag-modal-mask" : ""}>{children}</div> :
+			children
+	)
+
 	return <>{
-		createPortal(
+		createPortal(maskWrapper(
 			<Rnd
 				ref={rndRef}
 				className={[RND_CLS, store.rndContainerCls].join(" ")}
@@ -358,12 +347,12 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 				>
 					{children}
 				</Renderer>
-			</Rnd>,
+			</Rnd>),
 			store.portals.node || document.getElementsByTagName("body")[0]
 		)
 	}</>
 }
-export const Modal: FC<TModalProps> = (props) => {
+export const Modal: FC<IModalProps> = (props) => {
 	const { children, drag, rnd, resizable, closable, cancelClosableClassName, ...modalProps } = props
 	const store = useRef<IStoreProps>({
 		id: null,
@@ -384,7 +373,11 @@ export const Modal: FC<TModalProps> = (props) => {
 			Array.isArray(cancelClosableClassName) && cancelClosableClassName.filter(v => v.toString().trim()).length ?
 				cancelClosableClassName :
 				[]
-		let close = true	
+		excludes = [
+			...DEFAULT_CANCEL_CLOSABLE_CLASS_NAMES,
+			...excludes
+		]
+		let close = true
 		for (let i = 0; i < excludes.length; i++) {
 			const cls = excludes[i].toString().trim()
 			if (target.closest(`.${cls}`)) {
@@ -395,12 +388,12 @@ export const Modal: FC<TModalProps> = (props) => {
 		if (close && !target.closest(`.${store.current.rndContainerCls}`) && typeof props.onCancel === "function") {
 			// @ts-ignore
 			props.onCancel(e)
-		}	
+		}
 	}
 	useEffect(() => {
-		props.visible && closable && document.addEventListener('click', clickHandle)
+		props.visible && closable && !props.mask && document.addEventListener('click', clickHandle)
 		return () => {
-			closable && document.removeEventListener('click', clickHandle)
+			closable && !props.mask && document.removeEventListener('click', clickHandle)
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [props.visible])

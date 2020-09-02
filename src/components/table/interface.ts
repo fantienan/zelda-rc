@@ -100,6 +100,7 @@ export interface IVirtualTableProps extends IEnhanceTableProps {
     valueKey: string
     paddingLeft: number
     generateNode: (body: TBody) => ReactNode
+    clearHighlight: Function
 }
 
 export type TMoveCard = (targetItem: TState, nextItem: TState, data?: TColumn[]) => void

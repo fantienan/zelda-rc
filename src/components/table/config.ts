@@ -16,15 +16,13 @@ export const TR_SELECTED_CLS = 'cell-selected'
 export const CONTAINER_CLASS = '.ant-table-container'
 export const PADDING_LEFT = 15
 export const CLASS_NAME = ''
-export const TRUE = true
-export const FALSE = false
 export const VALUE_KEY = 'id'
 export const PERFIX_ICON = 'prefix-icon'
 export const DEFAULT_STATE = {
-	isOpen: FALSE,
-	nodeDisabled: FALSE,
-	checkDisabled: FALSE,
-	checked: FALSE
+	isOpen: false,
+	nodeDisabled: false,
+	checkDisabled: false,
+	checked: false
 }
 export const VIRTUAL_GRID_CLS = 'virtual-grid'
 export const VIRTUAL_GRID_BORDERED_CLS = 'virtual-grid-bordered'

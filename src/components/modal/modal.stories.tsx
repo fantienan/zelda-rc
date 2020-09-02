@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
-import { Button, Input } from 'antd'
+import { Button, Input, Select, DatePicker } from 'antd'
 import { Story, Meta } from '@storybook/react/types-6-0'
-import Modal, { TModalProps } from './modal'
+import Modal, { IModalProps } from './modal'
+import {RND_CANCEL_DRAG_CLS} from './config'
 import "../../common.css"
 
 export default {
@@ -9,7 +10,7 @@ export default {
 	component: Modal
 } as Meta
 
-const Template: Story<TModalProps> = (args, i) => {
+const Template: Story<IModalProps> = (args, i) => {
 	const [visible, setVisible] = useState<any>()
 	return <>
 		<Button onClick={() => setVisible(true)}>click</Button>
@@ -18,9 +19,10 @@ const Template: Story<TModalProps> = (args, i) => {
 			visible={visible}
 			onOk={() => setVisible(false)}
 			onCancel={() => setVisible(false)}
-			className="xxx"
 		>
 			<Input />
+			<Select dropdownClassName={RND_CANCEL_DRAG_CLS}/>
+			<DatePicker dropdownClassName={RND_CANCEL_DRAG_CLS}/>
 		</Modal>
 	</>
 }
@@ -30,6 +32,7 @@ Basice.args = {
 	drag: true,
 	resizable: false,
 	title: "标题",
-	width: 800
+	width: 800,
+	mask: false
 }
 

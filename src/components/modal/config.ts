@@ -25,3 +25,10 @@ export const ANT_MODAL_FOOTER_SELECTOR = ".ant-modal-footer"
 export const RND_Z_INDEX = 1000
 export const CANCEL_CLOSABLE_CLASS_NAME = "cancel-closable"
 export const RND_CANCEL_SELECTOR = ".cancel-drag"
+export const RND_CANCEL_DRAG_CLS = "cancel-drag"
+export const DEFAULT_CANCEL_CLOSABLE_CLASS_NAMES = [
+    'ant-select-dropdown',
+    'ant-picker-dropdown',
+    'ant-tooltip',
+    'ant-popover'
+]
