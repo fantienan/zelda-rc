@@ -1,4 +1,4 @@
-import React, { FC, CSSProperties, useState, useEffect, useRef, useMemo } from 'react'
+import React, { FC, CSSProperties, useState, useEffect, useRef, useMemo, ReactNode } from 'react'
 import { Table as ATable } from 'antd'
 import { Resizable } from 'react-resizable'
 import { VariableSizeGrid as Grid } from 'react-window'
@@ -20,69 +20,15 @@ import {
 } from './config'
 import useGridProxy from './useGridProxy'
 import {
-	KV, IEnhanceTableProps, TEnhanceColumn, TMoveCard, TState,
+	KV, IEnhanceTableProps, TEnhanceColumn, TMoveCard, TState, TBody,
 	THandleResizable, THandleResizableStop, TColumn, IHeaderCellProps,
 	IStoreProps, IRenderDragProviderItem, IRenderGridProps, TOriginalData,
-	TreeDataInterface, TLoadingDataRes, TLoadingData, TRenderGrid
+	TreeDataInterface, TLoadingDataRes, IVirtualTableProps, ITableProps as IT
 } from './interface'
-import { TableProps } from 'antd/lib/table'
 import "./style/index"
 
-export interface ITableProps<RecordType = any> extends TableProps<RecordType> {
-	/**
-	 * 拖拽改变列的顺序
-	*/
-	dragColumn?: boolean
-    /**
-     * 拖拽改变列宽
-    */
-	resizableColumn?: boolean
-	/**
-	 * 虚拟表格
-	*/
-	virtual?: boolean
-	/**
-	 * 虚拟表格配置行高
-	 */
-	rowHeight?: (index: number) => void | number
-	/**
-	 * 虚拟表格层级间的梯度
-	*/
-	paddingLeft?: number
-	/**
-	 * 虚拟列表树状数据获取唯一标识的key
-	 */
-	valueKey?: string
-	/**
-	 * 虚拟列表加载树状数据子节点数据
-	 */
-	loadingData?: TLoadingData
-	/**
-	 * 虚拟列表渲染table tbody单元格
-	 */
-	renderGrid?: TRenderGrid
-	/**
-	 * 点击行是否高亮
-	 */
-	rowHighlight?: boolean
-    /**
-     * 页面是否加载，[配置项](https://ant.design/components/table-cn/#Table)
-    */
-	loading?: TableProps<RecordType>["loading"]
-	/**
-	 * 表格是否可滚动，也可制定表格宽高，[配置项](https://ant.design/components/table-cn/#scroll)
-	*/
-	scroll?: TableProps<RecordType>["scroll"]
-	/**
-	 * 是否展示外边框和内边框，[配置项](https://ant.design/components/table-cn/#Table)
-	*/
-	bordered?: TableProps<RecordType>["bordered"]
-	/**
-	 * 表格大小，[配置项](https://ant.design/components/table-cn/#Table)
-	*/
-	size?: TableProps<RecordType>["size"]
-}
-function RenderGrid(props: IRenderGridProps) {
+export interface ITableProps<RecordType = any> extends IT<RecordType> { }
+const RenderGrid: FC<IRenderGridProps> = (props) => {
 	const {
 		rawData,
 		rowIndex,
@@ -163,25 +109,20 @@ function RenderGrid(props: IRenderGridProps) {
 		{prefix}{node}
 	</>
 }
-const EnhanceTable: FC<IEnhanceTableProps> = (props) => {
+const VirtualTable: FC<IVirtualTableProps> = (props) => {
 	const {
 		store,
-		dragColumn,
-		resizableColumn,
-		virtual,
 		rowHighlight,
-		paddingLeft = PADDING_LEFT,
-		valueKey = VALUE_KEY,
+		paddingLeft,
+		valueKey,
 		loadingData,
+		children,
+		columns,
+		generateNode,
 		...tableProps
 	} = props
 	const key = (props.pagination || {}).current || KEY_ALL
-	// 缓存数据
-	const cacheDataSource = store.cacheDataSources[key] || []
-	const [columns, setColumns] = useState<TEnhanceColumn[]>([])
 	const [update, forceUpdate] = useState(0)
-	const [gridProxyHolder, setGridProxyStyle] = useGridProxy()
-	const ref = useRef<any>()
 	const [tableWidth, setTableWidth] = useState(0)
 	const [widthColumns, occupyWidth] = useMemo((): [TEnhanceColumn[], number] => {
 		const ws = columns.filter((col: TEnhanceColumn) => col.width)
@@ -226,157 +167,8 @@ const EnhanceTable: FC<IEnhanceTableProps> = (props) => {
 		})
 		return obj
 	})
-	const orderBy: TMoveCard = (targetItem, nextItem, data = columns) => {
-		const [removed] = data.splice(targetItem.index, 1)
-		data.splice(nextItem.index, 0, removed)
-	}
-	// 拖拽改变顺序的回调
-	const moveCard: TMoveCard = (targetItem, nextItem) => {
-		if (targetItem.index === nextItem.index || !columns.length) {
-			return
-		}
-		if (!nextItem.isLeaf) {
-			orderBy(targetItem, nextItem)
-			return setColumns(columns.map((c, index) => ({
-				...c,
-				state: {
-					...c.state,
-					index
-				}
-			})))
-		}
-		const data = getChildrenItem(targetItem, columns)
-		if (Array.isArray(data) && data.length) {
-			orderBy(targetItem, nextItem, data)
-			// @ts-ignore
-			setColumns(transformColumns(columns))
-		}
-	}
-	function getChildrenItem(targetItem: TState, columns: TEnhanceColumn[]) {
-		let [, ...indexs] = (targetItem.indexPath || "").split('-').filter(Boolean).map(v => Number(v)).reverse()
-		indexs = indexs.reverse()
-		let i = 0
-		let data = columns[indexs[0]].children
-		while (i < indexs.length - 1 && Array.isArray(data) && data.length) {
-			data = data[indexs[++i]].children
-		}
-		return data
-	}
-	// Resizable
-	const handleResizeStart: THandleResizable = column => (e, data) => {
-		setGridProxyStyle(e, data, 'start', ref)
-	}
-
-	const handleResize: THandleResizable = column => (e, data) => {
-		setGridProxyStyle(e, data, 'resize', ref)
-	}
-	const resizaStopCallback = (width: number, column: TEnhanceColumn, columns: TEnhanceColumn[]) => {
-		const { index, isLeaf } = column.state
-		if (isLeaf) {
-			const data = getChildrenItem(column.state, columns)
-			if (Array.isArray(data) && data.length) {
-				data[index].width = width
-				setColumns([...columns])
-			}
-			return
-		}
-		columns[index].width = width
-		setColumns([...columns])
-	}
-	const handleResizeStop: THandleResizableStop = column => (e, data, columns) => {
-		setGridProxyStyle(e, data, 'stop', ref, (width: number) => resizaStopCallback(width, column, columns))
-	}
-
-	const onHeaderCell = (column: TEnhanceColumn) => ({
-		width: column.width,
-		state: column.state,
-		onResizeStart: handleResizeStart(column),
-		onResize: handleResize(column),
-		onResizeStop: handleResizeStop(column)
-	})
-
-	function generateColumns(col: TColumn, parentIndex: number, level: number, path: string): KV {
-		if (Array.isArray(col.children) && col.children.length) {
-			const type = `${ACCEPT}-${parentIndex}-${level}`
-			return {
-				...col,
-				children: col.children.map((c: TColumn, index) => {
-					const indexPath = `${path}-${index}`
-					const state = {
-						index,
-						type,
-						isLeaf: true,
-						indexPath
-					}
-					return {
-						...generateColumns(c, parentIndex, level + 1, indexPath),
-						state,
-						onHeaderCell
-					}
-				})
-			}
-		}
-		return col
-	}
-	function transformColumns(data: TColumn[]) {
-		return data.map((c: TColumn, index) => ({
-			...generateColumns(c, index, LEVEL_VALUE, index.toString()),
-			state: {
-				index,
-				type: ACCEPT,
-				isLeaf: false
-			},
-			onHeaderCell
-		}))
-	}
-
-	const renderDragProviderItem = ({ state, title, node, className }: IRenderDragProviderItem) => {
-		const element = node ? node : title
-		return dragColumn && state && typeof state === "object" ?
-			<DragProvider.Item
-				state={state}
-				title={title}
-				store={store}
-				moveCard={moveCard}
-			>
-				{element}
-			</DragProvider.Item> :
-			element
-	}
-	const renderResize = (argus: IHeaderCellProps) => {
-		let { onResize, onResizeStart, onResizeStop, width, state, ...restProps } = argus
-		/**
-		 * @todo 
-		 * node扩展排序、筛选
-		 */
-		const node = undefined
-		const th = <th {...restProps} >
-			{renderDragProviderItem({ state, title: argus.children[1], node, className: argus.className })}
-		</th>
-		return resizableColumn ? <Resizable
-			width={width || 0}
-			height={0}
-			handle={<span
-				className={`react-resizable-handle react-resizable-handle-se ${CANCEL_FRAG_COLUMN_CLS}`}
-				onClick={e => {
-					e.stopPropagation();
-				}}
-			/>}
-			onResize={onResize}
-			onResizeStart={onResizeStart}
-			onResizeStop={(e, data) => onResizeStop(e, data, columns)}
-			draggableOpts={{ enableUserSelectHack: false }}
-		>
-			{th}
-		</Resizable> : th
-	}
-	const headerCell = (argus: IHeaderCellProps) => {
-		let { onResize, onResizeStart, onResizeStop, width, state, ...restProps } = argus
-		return width === undefined ?
-			<th {...restProps} >{renderDragProviderItem({ state, title: argus.children[1], className: argus.className })}</th> :
-			renderResize(argus)
-	}
-
+	// 缓存数据
+	const cacheDataSource = store.cacheDataSources[key] || []
 	function initCache() {
 		const data = (props.dataSource || []).reduce((acc: KV<any>, cur: TOriginalData) => {
 			acc.push({
@@ -570,6 +362,180 @@ const EnhanceTable: FC<IEnhanceTableProps> = (props) => {
 			</Grid>
 		)
 	}
+	return <ResizeObserver
+		onResize={({ width }) => {
+			clearTimeout(store.setTableWidthTimer)
+			store.setTableWidthTimer = setTimeout(() => setTableWidth(width), 10)
+		}}
+	>
+		{generateNode(renderVirtualList)}
+	</ResizeObserver>
+}
+const EnhanceTable: FC<IEnhanceTableProps> = (props) => {
+	const {
+		store,
+		dragColumn,
+		resizableColumn,
+		virtual,
+		rowHighlight,
+		paddingLeft = PADDING_LEFT,
+		valueKey = VALUE_KEY,
+		loadingData,
+		...tableProps
+	} = props
+	const [columns, setColumns] = useState<TEnhanceColumn[]>([])
+	const [gridProxyHolder, setGridProxyStyle] = useGridProxy()
+	const ref = useRef<any>()
+	const orderBy: TMoveCard = (targetItem, nextItem, data = columns) => {
+		const [removed] = data.splice(targetItem.index, 1)
+		data.splice(nextItem.index, 0, removed)
+	}
+	// 拖拽改变顺序的回调
+	const moveCard: TMoveCard = (targetItem, nextItem) => {
+		if (targetItem.index === nextItem.index || !columns.length) {
+			return
+		}
+		if (!nextItem.isLeaf) {
+			orderBy(targetItem, nextItem)
+			return setColumns(columns.map((c, index) => ({
+				...c,
+				state: {
+					...c.state,
+					index
+				}
+			})))
+		}
+		const data = getChildrenItem(targetItem, columns)
+		if (Array.isArray(data) && data.length) {
+			orderBy(targetItem, nextItem, data)
+			// @ts-ignore
+			setColumns(transformColumns(columns))
+		}
+	}
+	function getChildrenItem(targetItem: TState, columns: TEnhanceColumn[]) {
+		let [, ...indexs] = (targetItem.indexPath || "").split('-').filter(Boolean).map(v => Number(v)).reverse()
+		indexs = indexs.reverse()
+		let i = 0
+		let data = columns[indexs[0]].children
+		while (i < indexs.length - 1 && Array.isArray(data) && data.length) {
+			data = data[indexs[++i]].children
+		}
+		return data
+	}
+	// Resizable
+	const handleResizeStart: THandleResizable = column => (e, data) => {
+		setGridProxyStyle(e, data, 'start', ref)
+	}
+
+	const handleResize: THandleResizable = column => (e, data) => {
+		setGridProxyStyle(e, data, 'resize', ref)
+	}
+	const resizaStopCallback = (width: number, column: TEnhanceColumn, columns: TEnhanceColumn[]) => {
+		const { index, isLeaf } = column.state
+		if (isLeaf) {
+			const data = getChildrenItem(column.state, columns)
+			if (Array.isArray(data) && data.length) {
+				data[index].width = width
+				setColumns([...columns])
+			}
+			return
+		}
+		columns[index].width = width
+		setColumns([...columns])
+	}
+	const handleResizeStop: THandleResizableStop = column => (e, data, columns) => {
+		setGridProxyStyle(e, data, 'stop', ref, (width: number) => resizaStopCallback(width, column, columns))
+	}
+
+	const onHeaderCell = (column: TEnhanceColumn) => ({
+		width: column.width,
+		state: column.state,
+		onResizeStart: handleResizeStart(column),
+		onResize: handleResize(column),
+		onResizeStop: handleResizeStop(column)
+	})
+
+	function generateColumns(col: TColumn, parentIndex: number, level: number, path: string): KV {
+		if (Array.isArray(col.children) && col.children.length) {
+			const type = `${ACCEPT}-${parentIndex}-${level}`
+			return {
+				...col,
+				children: col.children.map((c: TColumn, index) => {
+					const indexPath = `${path}-${index}`
+					const state = {
+						index,
+						type,
+						isLeaf: true,
+						indexPath
+					}
+					return {
+						...generateColumns(c, parentIndex, level + 1, indexPath),
+						state,
+						onHeaderCell
+					}
+				})
+			}
+		}
+		return col
+	}
+	function transformColumns(data: TColumn[]) {
+		return data.map((c: TColumn, index) => ({
+			...generateColumns(c, index, LEVEL_VALUE, index.toString()),
+			state: {
+				index,
+				type: ACCEPT,
+				isLeaf: false
+			},
+			onHeaderCell
+		}))
+	}
+
+	const renderDragProviderItem = ({ state, title, node, className }: IRenderDragProviderItem) => {
+		const element = node ? node : title
+		return dragColumn && state && typeof state === "object" ?
+			<DragProvider.Item
+				state={state}
+				title={title}
+				store={store}
+				moveCard={moveCard}
+			>
+				{element}
+			</DragProvider.Item> :
+			element
+	}
+	const renderResize = (argus: IHeaderCellProps) => {
+		let { onResize, onResizeStart, onResizeStop, width, state, ...restProps } = argus
+		/**
+		 * @todo 
+		 * node扩展排序、筛选
+		 */
+		const node = undefined
+		const th = <th {...restProps} >
+			{renderDragProviderItem({ state, title: argus.children[1], node, className: argus.className })}
+		</th>
+		return resizableColumn ? <Resizable
+			width={width || 0}
+			height={0}
+			handle={<span
+				className={`react-resizable-handle react-resizable-handle-se ${CANCEL_FRAG_COLUMN_CLS}`}
+				onClick={e => {
+					e.stopPropagation();
+				}}
+			/>}
+			onResize={onResize}
+			onResizeStart={onResizeStart}
+			onResizeStop={(e, data) => onResizeStop(e, data, columns)}
+			draggableOpts={{ enableUserSelectHack: false }}
+		>
+			{th}
+		</Resizable> : th
+	}
+	const headerCell = (argus: IHeaderCellProps) => {
+		let { onResize, onResizeStart, onResizeStop, width, state, ...restProps } = argus
+		return width === undefined ?
+			<th {...restProps} >{renderDragProviderItem({ state, title: argus.children[1], className: argus.className })}</th> :
+			renderResize(argus)
+	}
 	function clearHighlight() {
 		if (store.nodes.length) {
 			store.nodes.forEach((node: HTMLElement) => {
@@ -584,6 +550,7 @@ const EnhanceTable: FC<IEnhanceTableProps> = (props) => {
 			!container && clearHighlight()
 		}
 	}
+
 	useEffect(() => {
 		rowHighlight && document.addEventListener('click', mouseClick)
 		return () => {
@@ -603,40 +570,52 @@ const EnhanceTable: FC<IEnhanceTableProps> = (props) => {
 	if (!columns.length) {
 		return null
 	}
-	const containerCnf = {
-		ref,
-		className: dragColumn ? [DRAG_TABLE_CLS, store.dragTableCls].join(" ") : undefined
-	}
-	const tableCnf = {
-		...tableProps,
-		columns,
-		components: {
-			header: {
-				cell: headerCell,
-			},
-			body: virtual ? renderVirtualList : undefined
+	const generateNode = (body?: TBody) => {
+		const containerCnf = {
+			ref,
+			className: dragColumn ? [DRAG_TABLE_CLS, store.dragTableCls].join(" ") : undefined
 		}
-	}
-	const proxyHolder = resizableColumn ? gridProxyHolder : null
-	if (dragColumn) {
-		return <div {...containerCnf}>
-			<DragProvider>
-				<ATable {...tableCnf} />
-			</DragProvider>
+		const tableCnf = {
+			...tableProps,
+			columns,
+			components: {
+				header: {
+					cell: headerCell,
+				},
+				body
+			}
+		}
+		const proxyHolder = resizableColumn ? gridProxyHolder : null
+		const node = <div {...containerCnf}>
+			{dragColumnWrapper(<ATable {...tableCnf} />)}
 			{proxyHolder}
 		</div>
+		return node
 	}
-	return <ResizeObserver
-		onResize={({ width }) => {
-			clearTimeout(store.setTableWidthTimer)
-			store.setTableWidthTimer = setTimeout(() => setTableWidth(width), 10)
-		}}
-	>
-		<div {...containerCnf}>
-			<ATable {...tableCnf} />
-			{proxyHolder}
-		</div>
-	</ResizeObserver>
+	// 拖拽列排序包装器
+	const dragColumnWrapper = (children: ReactNode) => (
+		dragColumn ? <DragProvider>
+			{children}
+		</DragProvider> :
+			children
+	)
+	// 渲染器
+	const renderer = () => {
+		return virtual ?
+			<VirtualTable
+				{...tableProps}
+				columns={columns}
+				store={store}
+				rowHighlight={rowHighlight}
+				paddingLeft={paddingLeft}
+				valueKey={valueKey}
+				loadingData={loadingData}
+				generateNode={generateNode}
+			/> :
+			generateNode()
+	}
+	return renderer()
+
 }
 export function Table<RecordType extends object = any>(props: ITableProps<RecordType>) {
 	const {

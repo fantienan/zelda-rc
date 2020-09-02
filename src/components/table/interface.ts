@@ -1,12 +1,64 @@
-import { ReactNodeArray, RefObject, SyntheticEvent, ReactNode } from 'react'
+import { ReactNodeArray, RefObject, SyntheticEvent, ReactNode, Ref } from 'react'
 import { ResizeCallbackData } from 'react-resizable'
-import { ColumnsType, ColumnType } from 'antd/lib/table'
-import { ITableProps } from './table'
+import { ColumnsType, ColumnType, TableProps } from 'antd/lib/table'
 
 export type KV<T = any> = {
     [k: string]: T
 }
-
+export interface ITableProps<RecordType = any> extends TableProps<RecordType> {
+	/**
+	 * 拖拽改变列的顺序
+	*/
+	dragColumn?: boolean
+    /**
+     * 拖拽改变列宽
+    */
+	resizableColumn?: boolean
+	/**
+	 * 虚拟表格
+	*/
+	virtual?: boolean
+	/**
+	 * 虚拟表格配置行高
+	 */
+	rowHeight?: (index: number) => void | number
+	/**
+	 * 虚拟表格层级间的梯度
+	*/
+	paddingLeft?: number
+	/**
+	 * 虚拟列表树状数据获取唯一标识的key
+	 */
+	valueKey?: string
+	/**
+	 * 虚拟列表加载树状数据子节点数据
+	 */
+	loadingData?: TLoadingData
+	/**
+	 * 虚拟列表渲染table tbody单元格
+	 */
+	renderGrid?: TRenderGrid
+	/**
+	 * 点击行是否高亮
+	 */
+	rowHighlight?: boolean
+    /**
+     * 页面是否加载，[配置项](https://ant.design/components/table-cn/#Table)
+    */
+	loading?: TableProps<RecordType>["loading"]
+	/**
+	 * 表格是否可滚动，也可制定表格宽高，[配置项](https://ant.design/components/table-cn/#scroll)
+	*/
+	scroll?: TableProps<RecordType>["scroll"]
+	/**
+	 * 是否展示外边框和内边框，[配置项](https://ant.design/components/table-cn/#Table)
+	*/
+	bordered?: TableProps<RecordType>["bordered"]
+	/**
+	 * 表格大小，[配置项](https://ant.design/components/table-cn/#Table)
+	*/
+	size?: TableProps<RecordType>["size"]
+}
 export interface ColumnGroupType<RecordType> extends Omit<ColumnType<RecordType>, 'dataIndex'> {
     children: ColumnsType<RecordType>;
 }
@@ -41,6 +93,13 @@ export type TEnhanceColumn = {
 } & TColumn
 export interface IEnhanceTableProps extends ITableProps<any> {
     store: IStoreProps
+}
+export type TBody = (data: TEnhanceColumn[], params: any) => ReactNode
+export interface IVirtualTableProps extends IEnhanceTableProps {
+    columns: TEnhanceColumn[]
+    valueKey: string
+    paddingLeft: number
+    generateNode: (body: TBody) => ReactNode
 }
 
 export type TMoveCard = (targetItem: TState, nextItem: TState, data?: TColumn[]) => void
