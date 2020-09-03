@@ -1,7 +1,7 @@
 import React, { FC, CSSProperties, RefObject, ReactNode, useRef, useEffect, useState } from "react"
 import { createPortal } from "react-dom"
 import { Modal as AModal } from "antd"
-import { Rnd, Props, RndResizeCallback } from 'react-rnd'
+import { Rnd, Props, RndResizeStartCallback, RndResizeCallback, RndDragCallback } from 'react-rnd'
 import { ModalProps } from 'antd/lib/modal'
 import {
 	RND_CLS, BOX_SHADOW, REACT_DRAGGBLE_DRAGGED, INIT_TIME_CLS, DESTROY_TIME_CLS, DEFAULT_CANCEL_CLOSABLE_CLASS_NAMES,
@@ -30,16 +30,18 @@ interface IStoreProps {
 		id: string
 	}
 	rndContainerCls: string
+	draging: boolean
+	resizeing: boolean
 }
 interface IRendererBasiceProps {
 	rndRef: RefObject<any>
 	destroy: Function
 }
-type TRendererProps = IModalProps & IRendererBasiceProps
+type TRendererProps = TModalProps & IRendererBasiceProps
 type TEnhanceModalProps = {
 	store: IStoreProps
-} & IModalProps
-export interface IModalProps extends ModalProps {
+} & TModalProps
+interface IBasicsModalProps {
 	children?: ReactNode
 	/**
 	 * 拖拽移动
@@ -78,7 +80,7 @@ export interface IModalProps extends ModalProps {
 	*/
 	mask?: boolean
 }
-
+export type TModalProps = Partial<IBasicsModalProps & ModalProps>
 const Renderer: FC<TRendererProps> = (props) => {
 	const { children, rndRef, visible, destroy, ...resetProps } = props
 	const [show, setShow] = useState<boolean>()
@@ -158,8 +160,8 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 	})
 
 	const updateRnd = ({ width = 0, height = 0, x = 0, y = 0 }: IUpdate) => {
-		rndRef.current.updateSize({ width, height })
-		rndRef.current.updatePosition({ x, y })
+		!store.resizeing && rndRef.current.updateSize({ width, height })
+		!store.draging && rndRef.current.updatePosition({ x, y })
 	}
 
 	const getPosition = (width: number, height: number) => {
@@ -207,11 +209,20 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 			if (rndRef.current) {
 				rndRef.current.resizable.resizable.classList.remove(INIT_TIME_CLS)
 				document.getElementsByTagName('body')[0].classList.remove(OVERFLOW_CLS)
+				const { width } = rect
 				updateRnd({
-					width: rect.width,
+					width,
 					height: rect.height,
 					...getPosition(rect.width, rect.height)
 				})
+				setTimeout(() => {
+					const { height } = modalNode.getBoundingClientRect()
+					updateRnd({
+						width,
+						height,
+						...getPosition(rect.width, height)
+					})
+				}, 300)
 				rndRef.current.resizable.resizable.classList.add(BOX_SHADOW)
 			}
 		}
@@ -306,9 +317,25 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 		const footerNodeRect = containerNode.querySelector(ANT_MODAL_FOOTER_SELECTOR).getBoundingClientRect()
 		bodyNode.style.height = containerNode.getBoundingClientRect().height - headerNodeRect.height - footerNodeRect.height + 'px'
 	}
+	const onResizeStart: RndResizeStartCallback = (e, dir, refToElement) => {
+		store.resizeing = true
+		typeof rnd.onResizeStart === 'function' && rnd.onResizeStart(e, dir, refToElement)
+	}
 	const onResize: RndResizeCallback = (e, dir, refToElement, delta, position) => {
 		setRect()
 		typeof rnd.onResize === "function" && rnd.onResize(e, dir, refToElement, delta, position)
+	}
+	const onResizeStop: RndResizeCallback = (e, dir, elementRef, delta, position) => {
+		store.resizeing = false
+		typeof rnd.onResizeStop === "function" && rnd.onResizeStop(e, dir, elementRef, delta, position)
+	}
+	const onDragStart: RndDragCallback = (e, data) => {
+		store.draging = true
+		typeof rnd.onDragStart === "function" && rnd.onDragStart(e, data)
+	}
+	const onDragStop: RndDragCallback = (e, data) => {
+		store.draging = false
+		typeof rnd.onDragStop === "function" && rnd.onDragStop(e, data)
 	}
 	const getAModalWidth = () => {
 		if (visible === false && resizable && rndRef.current) {
@@ -336,7 +363,11 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 				minHeight={MIN_HEIGHT}
 				resizeGrid={DEFAULT_RESIZE_GRID}
 				{...rnd}
+				onResizeStart={onResizeStart}
 				onResize={onResize}
+				onResizeStop={onResizeStop}
+				onDragStart={onDragStart}
+				onDragStop={onDragStop}
 			>
 				<Renderer
 					{...resetProps}
@@ -352,7 +383,7 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 		)
 	}</>
 }
-export const Modal: FC<IModalProps> = (props) => {
+export const Modal: FC<TModalProps> = (props) => {
 	const { children, drag, rnd, resizable, closable, cancelClosableClassName, ...modalProps } = props
 	const store = useRef<IStoreProps>({
 		id: null,
@@ -361,7 +392,9 @@ export const Modal: FC<IModalProps> = (props) => {
 			node: null,
 			id: `portal-id-${parseInt((Math.random() * 1000000).toString())}`
 		},
-		rndContainerCls: `${RND_CLS}-${parseInt((Math.random() * 1000000).toString())}`
+		rndContainerCls: `${RND_CLS}-${parseInt((Math.random() * 1000000).toString())}`,
+		draging: false,
+		resizeing: false
 	})
 	function clickHandle(e: MouseEvent) {
 		if (!e.target || !props.visible) {

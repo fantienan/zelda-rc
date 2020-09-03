@@ -16,7 +16,6 @@ const Template: Story<ITableProps> = (args, i) => {
         type: 'checkbox',
         selectedRowKeys,
         onChange: (selectedRowKeys: Key[], selectedRows: any[]) => {
-            console.log(selectedRowKeys, selectedRows)
             setSelectedRowKeys(selectedRowKeys)
         },
         getCheckboxProps: (record: any) => {

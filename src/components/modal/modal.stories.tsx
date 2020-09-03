@@ -1,8 +1,8 @@
 import React, { useState } from 'react'
-import { Button, Input, Select, DatePicker } from 'antd'
+import { Button, Input, DatePicker } from 'antd'
 import { Story, Meta } from '@storybook/react/types-6-0'
-import Modal, { IModalProps } from './modal'
-import {RND_CANCEL_DRAG_CLS} from './config'
+import Modal, { TModalProps } from './modal'
+import { RND_CANCEL_DRAG_CLS } from './config'
 import "../../common.css"
 
 export default {
@@ -10,7 +10,7 @@ export default {
 	component: Modal
 } as Meta
 
-const Template: Story<IModalProps> = (args, i) => {
+const Template: Story<TModalProps> = (args, i) => {
 	const [visible, setVisible] = useState<any>()
 	return <>
 		<Button onClick={() => setVisible(true)}>click</Button>
@@ -21,8 +21,7 @@ const Template: Story<IModalProps> = (args, i) => {
 			onCancel={() => setVisible(false)}
 		>
 			<Input />
-			<Select dropdownClassName={RND_CANCEL_DRAG_CLS}/>
-			<DatePicker dropdownClassName={RND_CANCEL_DRAG_CLS}/>
+			<DatePicker dropdownClassName={RND_CANCEL_DRAG_CLS} />
 		</Modal>
 	</>
 }
