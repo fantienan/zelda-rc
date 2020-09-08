@@ -27,7 +27,6 @@ export const CANCEL_CLOSABLE_CLASS_NAME = "cancel-closable"
 export const RND_CANCEL_SELECTOR = ".cancel-drag"
 export const RND_CANCEL_DRAG_CLS = "cancel-drag"
 export const DEFAULT_CANCEL_CLOSABLE_CLASS_NAMES = [
-    RND_CLS,
     'ant-select-dropdown',
     'ant-picker-dropdown',
     'ant-tooltip',

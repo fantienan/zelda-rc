@@ -401,6 +401,10 @@ export const Modal: FC<TModalProps> = (props) => {
 			return
 		}
 		const target = e.target as HTMLElement
+		// 兼容点击删除modal中元素
+		if (!document.body.contains(target)) {
+			return
+		}
 		let excludes = typeof cancelClosableClassName === "string" && !!cancelClosableClassName.trim() ?
 			[cancelClosableClassName] :
 			Array.isArray(cancelClosableClassName) && cancelClosableClassName.filter(v => v.toString().trim()).length ?
