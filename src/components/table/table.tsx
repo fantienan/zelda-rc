@@ -658,7 +658,7 @@ export function Table<RecordType extends object = any>(props: ITableProps<Record
 
 Table.defaultProps = {
 	dragColumn: true,
-	resizableColumn: false,
+	resizableColumn: true,
 	className: CLASS_NAME,
 	bordered: true,
 	loading: false,
