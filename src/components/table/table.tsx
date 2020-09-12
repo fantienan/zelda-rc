@@ -14,7 +14,7 @@ import DragProvider from './DragProvider'
 import {
 	ACCEPT, DRAG_TABLE_CLS, LEVEL_VALUE, CANCEL_FRAG_COLUMN_CLS, 
 	classNames, KEY_ALL, ROW_HEIGHT, DATA_ROW_CLASS_NAME, CONTAINER_CLASS, EXPORATION_TIME,
-	TR_SELECTED_CLS, PADDING_LEFT, CLASS_NAME, VALUE_KEY, PERFIX_ICON, DEFAULT_STATE,
+	TR_SELECTED_CLS, /* PADDING_LEFT,  */CLASS_NAME, /* VALUE_KEY, */ PERFIX_ICON, DEFAULT_STATE,
 	VIRTUAL_GRID_BORDERED_CLS, ROW_HIGHLIGHT, VIRTUAL_GRID_CLS, VIRTUAL_TABLE_CELL_CLS,
 	VIRTUAL_TABLE_CELL_LAST_CLS, VIRTUAL_TABLE_CELL_FIRST_CLS
 } from './config'
@@ -109,7 +109,7 @@ const RenderGrid: FC<IRenderGridProps> = (props) => {
 		{prefix}{node}
 	</>
 }
-const VirtualTable: FC<IVirtualTableProps> = (props) => {
+export const VirtualTable: FC<IVirtualTableProps> = (props) => {
 	const {
 		store,
 		rowHighlight,
@@ -377,8 +377,8 @@ const EnhanceTable: FC<IEnhanceTableProps> = (props) => {
 		resizableColumn,
 		virtual,
 		rowHighlight,
-		paddingLeft = PADDING_LEFT,
-		valueKey = VALUE_KEY,
+		// paddingLeft = PADDING_LEFT,
+		// valueKey = VALUE_KEY,
 		loadingData,
 		...tableProps
 	} = props
