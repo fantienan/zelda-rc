@@ -1,7 +1,7 @@
 /**
  * 虚拟list 功能组件
  * **/
-import React, { FC } from 'react'
+import React, { FC, MouseEvent } from 'react'
 import { List, Tooltip } from 'antd'
 import { List as VList, AutoSizer, Index, ListRowRenderer, ListRowProps } from 'react-virtualized'
 import './style/index'
@@ -18,9 +18,9 @@ export interface RowRendererParams {
 }
 export type GetRowHeight = (index: number) => number
 export interface IRowRenderer extends ListRowProps { }
-export interface IVirtualList {
+export interface IVirtualList<T = KV<any>> {
     className?: string
-    data?: KV<any>[]
+    data?: T[]
     rowHeight?: number
     listHeight?: number
     overscanRowCount?: number
@@ -33,8 +33,9 @@ export interface IVirtualList {
     rowRenderer?: ListRowRenderer
     width?: number
     tooltip?: boolean
-    rowClick?: (index: number, data: KV<any>) => void
+    rowClick?: (e: MouseEvent, index: number, data: T) => void
 }
+
 export const VirtualList: FC<IVirtualList> = (props) => {
     const {
         className = '',
@@ -49,7 +50,7 @@ export const VirtualList: FC<IVirtualList> = (props) => {
         getRowHeight,
         rowRenderer,
         tooltip,
-        rowClick = (index: number, data: KV<any>) => { }
+        rowClick = (e: MouseEvent, index: number, data: KV<any>) => { }
     } = props
     const _noRowsRenderer = () => {
         return <div>暂无数据</div>
@@ -58,9 +59,9 @@ export const VirtualList: FC<IVirtualList> = (props) => {
     const _getRowHeight = (info: Index) => {
         return useDynamicRowHeight && typeof getRowHeight === "function" ? getRowHeight(info.index) : rowHeight
     }
-    const rowClickHandle = (index: number, item: KV<any>) => {
+    const rowClickHandle = (e: MouseEvent, index: number, item: KV<any>) => {
         if (typeof props.rowClick === "function") {
-            rowClick(index, item)
+            rowClick(e, index, item)
         }
     }
     const _rowRenderer = (argus: IRowRenderer) => {
@@ -79,7 +80,7 @@ export const VirtualList: FC<IVirtualList> = (props) => {
             className="row"
             style={style}
             key={key}
-            onClick={() => rowClickHandle(index, item)}
+            onClick={(e) => rowClickHandle(e, index, item)}
         >
             {
                 tooltip ? <Tooltip placement="topLeft" title={text}>
