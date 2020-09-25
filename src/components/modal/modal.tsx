@@ -13,15 +13,20 @@ import './style/index'
 
 type TDelayTask = { modalNode: HTMLElement }
 interface IUpdate {
-	width?: number
-	height?: number
+	width?: number | string
+	height?: number | string
 	x?: number
 	y?: number
 }
 type TKV<V = any> = {
 	[k: string]: V
 }
-
+interface ICnf {
+	width: number
+	height: number
+	x: number
+	y: number
+}
 interface IStoreProps {
 	id: any
 	destroyFlag: boolean,
@@ -197,33 +202,41 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 		y: DEFAULT_Y - TOLERANCE
 	})
 
+
+	const defaultRnd = (cnf: ICnf) => {
+		return rnd.default || cnf
+	}
+
 	// Modal显示之后
 	const afterShowModalFn = async () => {
 		if (rndRef.current) {
-			updateRnd(updateRndProps())
+			updateRnd(defaultRnd(updateRndProps()))
 			document.getElementsByTagName('body')[0].classList.add(OVERFLOW_CLS)
-			rndRef.current.resizable.resizable.classList.add(INIT_TIME_CLS)
+			!rnd.default && rndRef.current.resizable.resizable.classList.add(INIT_TIME_CLS)
 			const { modalNode } = await delayTask()
 			const rect = modalNode.getBoundingClientRect()
 			// 反复切换drag时 rndRef.current会丢失
 			if (rndRef.current) {
-				rndRef.current.resizable.resizable.classList.remove(INIT_TIME_CLS)
+				rndRef.current.resizable.resizable.classList.add(BOX_SHADOW)
+				!rnd.default && rndRef.current.resizable.resizable.classList.remove(INIT_TIME_CLS)
 				document.getElementsByTagName('body')[0].classList.remove(OVERFLOW_CLS)
+				if (rnd.default) {
+					return
+				}
 				const { width } = rect
-				updateRnd({
+				updateRnd(defaultRnd({
 					width,
 					height: rect.height,
 					...getPosition(rect.width, rect.height)
-				})
+				}))
 				setTimeout(() => {
 					const { height } = modalNode.getBoundingClientRect()
-					updateRnd({
+					updateRnd(defaultRnd({
 						width,
 						height,
 						...getPosition(rect.width, height)
-					})
+					}))
 				}, 300)
-				rndRef.current.resizable.resizable.classList.add(BOX_SHADOW)
 			}
 		}
 	}
@@ -352,7 +365,6 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 			<div className={visible ? "drag-modal-mask" : ""}>{children}</div> :
 			children
 	)
-
 	return <>{
 		createPortal(maskWrapper(
 			<Rnd
@@ -461,4 +473,3 @@ Modal.defaultProps = {
 }
 
 export default Modal;
-
