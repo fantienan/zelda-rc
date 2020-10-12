@@ -1,4 +1,4 @@
-import React, { FC, CSSProperties, RefObject, ReactNode, useRef, useEffect, useState } from "react"
+import React, { FC, CSSProperties, RefObject, ReactNode, useRef, useEffect, useState, Ref, forwardRef, useImperativeHandle } from "react"
 import { createPortal } from "react-dom"
 import { Modal as AModal } from "antd"
 import { Rnd, Props, RndResizeStartCallback, RndResizeCallback, RndDragCallback } from 'react-rnd'
@@ -45,6 +45,7 @@ interface IRendererBasiceProps {
 type TRendererProps = TModalProps & IRendererBasiceProps
 type TEnhanceModalProps = {
 	store: IStoreProps
+	rndRef: RefObject<any>
 } & TModalProps
 interface IBasicsModalProps {
 	children?: ReactNode
@@ -84,8 +85,12 @@ interface IBasicsModalProps {
 	 * 是否展示遮罩层，`drag=true`、`mask=true`时，点击弹窗以外弹窗将不会被关闭，这是设置`closable=true`将失效
 	*/
 	mask?: boolean
+	/**
+	 * rnd className
+	*/
+	rndClassName?: string
 }
-export type TModalProps = Partial<IBasicsModalProps & ModalProps>
+export type TModalProps = Partial<IBasicsModalProps & ModalProps & { rndRef: RefObject<any> }>
 const Renderer: FC<TRendererProps> = (props) => {
 	const { children, rndRef, visible, destroy, ...resetProps } = props
 	const [show, setShow] = useState<boolean>()
@@ -124,8 +129,7 @@ const Renderer: FC<TRendererProps> = (props) => {
 }
 
 const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
-	const { children, drag, style, centered, rnd = {}, store, visible, resizable, ...resetProps } = props
-	const rndRef = useRef<any>()
+	const { children, drag, style, centered, rnd = {}, store, visible, resizable, rndRef, rndClassName, ...resetProps } = props
 	const [update, forceupdate] = useState(1)
 
 	// 兼容requestAnimationFrame
@@ -369,7 +373,7 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 		createPortal(maskWrapper(
 			<Rnd
 				ref={rndRef}
-				className={[RND_CLS, store.rndContainerCls].join(" ")}
+				className={[RND_CLS, store.rndContainerCls, rndClassName].join(" ")}
 				style={getRndStyle()}
 				minWidth={resetProps.width}
 				minHeight={MIN_HEIGHT}
@@ -395,8 +399,8 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 		)
 	}</>
 }
-export const Modal: FC<TModalProps> = (props) => {
-	const { children, drag, rnd, resizable, closable, cancelClosableClassName, ...modalProps } = props
+export const Modal = forwardRef((props: TModalProps, ref: Ref<any>) => {
+	const { children, drag, rnd, resizable, closable, cancelClosableClassName, rndClassName, ...modalProps } = props
 	const store = useRef<IStoreProps>({
 		id: null,
 		destroyFlag: false,
@@ -408,6 +412,7 @@ export const Modal: FC<TModalProps> = (props) => {
 		draging: false,
 		resizeing: false
 	})
+	const rndRef = useRef<any>()
 	function clickHandle(e: MouseEvent) {
 		if (!e.target || !props.visible) {
 			return
@@ -439,6 +444,9 @@ export const Modal: FC<TModalProps> = (props) => {
 			props.onCancel(e)
 		}
 	}
+	useImperativeHandle(ref, () => ({
+		rndRef
+	}))
 	useEffect(() => {
 		props.visible && closable && !props.mask && document.addEventListener('click', clickHandle)
 		return () => {
@@ -459,17 +467,18 @@ export const Modal: FC<TModalProps> = (props) => {
 		...rnd,
 		cancel: RND_CANCEL_SELECTOR
 	} : rnd
-	return <EnhanceModal {...props} store={store.current} rnd={rndCnf}>
+	return <EnhanceModal {...props} store={store.current} rnd={rndCnf} rndRef={rndRef}>
 		{children}
 	</EnhanceModal>
-}
+})
 Modal.defaultProps = {
 	drag: true,
 	resizable: false,
 	width: DEFAULT_WIDTH,
 	closable: true,
 	zIndex: RND_Z_INDEX,
-	cancelClosableClassName: CANCEL_CLOSABLE_CLASS_NAME
+	cancelClosableClassName: CANCEL_CLOSABLE_CLASS_NAME,
+	rndClassName: ""
 }
 
 export default Modal;

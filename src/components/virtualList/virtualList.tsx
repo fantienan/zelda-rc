@@ -2,7 +2,7 @@
  * 虚拟list 功能组件
  * **/
 import React, { FC, MouseEvent } from 'react'
-import { List, Tooltip } from 'antd'
+import { List, Tooltip, Empty } from 'antd'
 import { List as VList, AutoSizer, Index, ListRowRenderer, ListRowProps } from 'react-virtualized'
 import './style/index'
 
@@ -33,6 +33,7 @@ export interface IVirtualList<T = KV<any>> {
     rowRenderer?: ListRowRenderer
     width?: number
     tooltip?: boolean
+    empty?: Function
     rowClick?: (e: MouseEvent, index: number, data: T) => void
 }
 
@@ -53,7 +54,7 @@ export const VirtualList: FC<IVirtualList> = (props) => {
         rowClick = (e: MouseEvent, index: number, data: KV<any>) => { }
     } = props
     const _noRowsRenderer = () => {
-        return <div>暂无数据</div>
+        return typeof props.empty === "function" ? <>{props.empty()}</> : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />
     }
 
     const _getRowHeight = (info: Index) => {
@@ -69,9 +70,9 @@ export const VirtualList: FC<IVirtualList> = (props) => {
             return rowRenderer(argus)
         }
         const { index, key, style = {} } = argus
-        try { 
+        try {
             !style.lineHeight && (style.lineHeight = style.height + 'px')
-        } catch (e) { 
+        } catch (e) {
             console.log(e)
         }
         const item = data[index]
