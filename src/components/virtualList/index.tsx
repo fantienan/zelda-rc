@@ -1,4 +1,4 @@
-import VirtualList from "./virtualList"
-import { ListRowProps } from 'react-virtualized'
-export interface IRowRenderer extends ListRowProps {}
+import VirtualList, { IOnScrollParams as IIOnScrollParams, IRowRenderer as IIRowRenderer } from "./virtualList"
+export interface IOnScrollParams extends IIOnScrollParams { }
+export interface IRowRenderer extends IIRowRenderer { }
 export default VirtualList

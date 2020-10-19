@@ -3,7 +3,7 @@
  * **/
 import React, { FC, MouseEvent } from 'react'
 import { List, Tooltip, Empty } from 'antd'
-import { List as VList, AutoSizer, Index, ListRowRenderer, ListRowProps } from 'react-virtualized'
+import { List as VList, AutoSizer, Index, ListRowRenderer, ListRowProps, OnScrollParams } from 'react-virtualized'
 import './style/index'
 
 type KV<T> = {
@@ -18,6 +18,9 @@ export interface RowRendererParams {
 }
 export type GetRowHeight = (index: number) => number
 export interface IRowRenderer extends ListRowProps { }
+export interface IOnScrollParams extends OnScrollParams {
+    isBottom: boolean
+}
 export interface IVirtualList<T = KV<any>> {
     className?: string
     data?: T[]
@@ -35,6 +38,7 @@ export interface IVirtualList<T = KV<any>> {
     tooltip?: boolean
     empty?: Function
     rowClick?: (e: MouseEvent, index: number, data: T) => void
+    onScroll?: (params: IOnScrollParams) => void
 }
 
 export const VirtualList: FC<IVirtualList> = (props) => {
@@ -90,6 +94,15 @@ export const VirtualList: FC<IVirtualList> = (props) => {
             }
         </div>
     }
+    const _onScroll = (params: OnScrollParams) => {
+        if (typeof props.onScroll === "function") {
+            const { clientHeight, scrollHeight, scrollTop } = params
+            props.onScroll({
+                ...params,
+                isBottom: clientHeight + scrollTop === scrollHeight
+            })
+        }
+    }
     return <List className={"enhance-list " + className}>
         <AutoSizer disableHeight>
             {({ width }) =>
@@ -103,6 +116,7 @@ export const VirtualList: FC<IVirtualList> = (props) => {
                     rowRenderer={_rowRenderer}
                     scrollToIndex={scrollToIndex}
                     width={props.width || width}
+                    onScroll={_onScroll}
                 />
             }
         </AutoSizer>
