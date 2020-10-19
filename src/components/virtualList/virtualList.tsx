@@ -99,7 +99,7 @@ export const VirtualList: FC<IVirtualList> = (props) => {
             const { clientHeight, scrollHeight, scrollTop } = params
             props.onScroll({
                 ...params,
-                isBottom: clientHeight + scrollTop === scrollHeight
+                isBottom: scrollHeight && clientHeight + scrollTop === scrollHeight ? true : false
             })
         }
     }
