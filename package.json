@@ -1,6 +1,6 @@
 {
   "name": "zelda-rc",
-  "version": "0.3.19",
+  "version": "0.4.1",
   "private": false,
   "main": "dist/es/index.js",
   "module": "dist/es/index.js",
@@ -91,8 +91,10 @@
     "@types/fs-extra": "^9.0.1",
     "@types/jest": "^24.0.0",
     "@types/node": "^12.0.0",
+    "@types/qs": "^6.9.5",
     "@types/react": "^16.9.0",
     "@types/react-dom": "^16.9.0",
+    "abortcontroller-polyfill": "^1.5.0",
     "antd": "^4.5.4",
     "babel-loader": "^8.1.0",
     "babel-plugin-import": "^1.13.0",
@@ -108,7 +110,10 @@
     "gulp": "^4.0.2",
     "gulp-clean-css": "^4.3.0",
     "gulp-less": "^4.0.1",
+    "hash.js": "^1.1.7",
     "husky": "^4.2.5",
+    "omit.js": "^2.0.2",
+    "qs": "^6.9.4",
     "rc-resize-observer": "^0.2.3",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
@@ -116,7 +121,8 @@
     "react-scripts": "3.4.3",
     "rimraf": "^3.0.2",
     "ts-node": "^8.10.2",
-    "typescript": "~3.7.2"
+    "typescript": "~3.7.2",
+    "whatwg-fetch": "^3.4.1"
   },
   "config": {
     "commitizen": {

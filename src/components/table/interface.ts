@@ -1,4 +1,4 @@
-import { ReactNodeArray, RefObject, SyntheticEvent, ReactNode, Ref } from 'react'
+import { ReactNodeArray, RefObject, SyntheticEvent, ReactNode } from 'react'
 import { ResizeCallbackData } from 'react-resizable'
 import { ColumnsType, ColumnType, TableProps } from 'antd/lib/table'
 
