@@ -319,9 +319,6 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 			right: rnd.style?.right,
 			zIndex: rnd.style?.zIndex || props.zIndex || RND_Z_INDEX
 		}
-		if (!resizable) {
-			s.overflow = "hidden"
-		}
 		return Object.keys(s).reduce((acc: TKV, k: string) => {
 			s[k] && (acc[k] = s[k])
 			return acc
@@ -448,12 +445,12 @@ export const Modal = forwardRef((props: TModalProps, ref: Ref<any>) => {
 		rndRef
 	}))
 	useEffect(() => {
-		props.visible && closable && !props.mask && document.addEventListener('click', clickHandle)
+		props.visible && closable && !props.mask && props.drag && document.addEventListener('click', clickHandle)
 		return () => {
-			closable && !props.mask && document.removeEventListener('click', clickHandle)
+			closable && !props.mask && props.drag && document.removeEventListener('click', clickHandle)
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [props.visible])
+	}, [props.visible, props.drag])
 	// 初始化时不渲染
 	if (props.visible === undefined) {
 		return null
@@ -463,11 +460,17 @@ export const Modal = forwardRef((props: TModalProps, ref: Ref<any>) => {
 			{children}
 		</AModal>
 	}
-	const rndCnf = !rnd?.cancel ? {
-		...rnd,
-		cancel: RND_CANCEL_SELECTOR
-	} : rnd
-	return <EnhanceModal {...props} store={store.current} rnd={rndCnf} rndRef={rndRef}>
+	const getRndCnf = () => {
+		const rndCnf: Props = {
+			enableResizing: resizable,
+			...rnd
+		}
+		if (!rnd?.cancel) {
+			rndCnf.cancel = RND_CANCEL_SELECTOR
+		}
+		return rndCnf
+	}
+	return <EnhanceModal {...props} store={store.current} rnd={getRndCnf()} rndRef={rndRef}>
 		{children}
 	</EnhanceModal>
 })
