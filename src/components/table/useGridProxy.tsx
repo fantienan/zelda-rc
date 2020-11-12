@@ -9,7 +9,7 @@ type TUseGridProxy = [
 
 const useGridProxy = (): TUseGridProxy => {
     const ref = useRef<any>()
-    const setStyle: TUseGridProxy[1] = (e, data, type, dragRef, cb) => {
+    const setStyle: TUseGridProxy[1] = (e: any, data, type, dragRef, cb) => {
         const th = data.node.closest(TH)
         if (!ref.current || !dragRef.current || !th) {
             return
@@ -26,7 +26,6 @@ const useGridProxy = (): TUseGridProxy => {
             ref.current.style.display = 'block'
             return
         }
-        // @ts-ignore
         const width = e.x - x - dragRect.x
         if (type === 'resize') {
             return ref.current.style.width = `${width}px`

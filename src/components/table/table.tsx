@@ -1,375 +1,22 @@
-import React, { FC, CSSProperties, useState, useEffect, useRef, useMemo, ReactNode } from 'react'
+import React, { FC, useState, useEffect, useRef, useMemo, ReactNode } from 'react'
 import { Table as ATable } from 'antd'
 import { Resizable } from 'react-resizable'
-import { VariableSizeGrid as Grid } from 'react-window'
-import ResizeObserver from 'rc-resize-observer'
+import DragProvider from './dragProvider'
+// import VirtualTable from './virtualTable'
 import {
-	FolderOutlined,
-	FolderOpenOutlined,
-	PlusSquareOutlined,
-	MinusSquareOutlined,
-	LoadingOutlined
-} from '@ant-design/icons'
-import DragProvider from './DragProvider'
-import {
-	ACCEPT, DRAG_TABLE_CLS, LEVEL_VALUE, CANCEL_FRAG_COLUMN_CLS, 
-	classNames, KEY_ALL, ROW_HEIGHT, DATA_ROW_CLASS_NAME, CONTAINER_CLASS, EXPORATION_TIME,
-	TR_SELECTED_CLS, /* PADDING_LEFT,  */CLASS_NAME, /* VALUE_KEY, */ PERFIX_ICON, DEFAULT_STATE,
-	VIRTUAL_GRID_BORDERED_CLS, ROW_HIGHLIGHT, VIRTUAL_GRID_CLS, VIRTUAL_TABLE_CELL_CLS,
-	VIRTUAL_TABLE_CELL_LAST_CLS, VIRTUAL_TABLE_CELL_FIRST_CLS
+	ACCEPT, DRAG_TABLE_CLS, LEVEL_VALUE, CANCEL_FRAG_COLUMN_CLS, CONTAINER_CLASS,
+	TR_SELECTED_CLS, CLASS_NAME, /* PADDING_LEFT, VALUE_KEY */
 } from './config'
 import useGridProxy from './useGridProxy'
 import {
 	KV, IEnhanceTableProps, TEnhanceColumn, TMoveCard, TState, TBody,
 	THandleResizable, THandleResizableStop, TColumn, IHeaderCellProps,
-	IStoreProps, IRenderDragProviderItem, IRenderGridProps, TOriginalData,
-	TreeDataInterface, TLoadingDataRes, IVirtualTableProps, ITableProps as IT
+	IStoreProps, IRenderDragProviderItem, ITableProps as IT
 } from './interface'
 import "./style/index"
 
 export interface ITableProps<RecordType = any> extends IT<RecordType> { }
-const RenderGrid: FC<IRenderGridProps> = (props) => {
-	const {
-		rawData,
-		rowIndex,
-		columnIndex,
-		mergedColumns,
-		addCacheChidlren,
-		removeCacheChidlren,
-		getCacheChidlren
-	} = props
-	let timer: any = null
-	const [loading, setLoading] = useState(false)
-	const { dataIndex, render } = mergedColumns[columnIndex]
-	const record = rawData[rowIndex]
-	const prefix = columnIndex === 0 ? renderPrefix() : null
-	const node = typeof render === 'function' ?
-		render(record.originalData[dataIndex], record, rowIndex) :
-		typeof props.renderGrid === 'function' ?
-			props.renderGrid(record, rowIndex, columnIndex, dataIndex) :
-			_renderGrid()
-	function _renderGrid() {
-		// 第一列的子节点
-		if (columnIndex === 0 && record.pid && record.state.labelKey) {
-			return record.originalData[record.state.labelKey]
-		}
-		return record.originalData[dataIndex]
-	}
-	async function clickHandle() {
-		if (loading) {
-			return
-		}
-		clearTimeout(timer)
-		timer = setTimeout(async () => {
-			// 关闭文件夹
-			if (record.state.isOpen) {
-				return removeCacheChidlren(record, rowIndex)
-			}
-			// 打开文件夹
-			if (
-				!record.state.isOpen &&
-				(record.children || []).length &&
-				record.state.childExpirationTime >= Date.now()
-			) {
-				return getCacheChidlren(record, rowIndex)
-			}
-			if (typeof props.loadingData === 'function') {
-				setLoading(true)
-				try {
-					const { data, state } = await props.loadingData({ record, rowIndex, columnIndex }) as TLoadingDataRes
-					addCacheChidlren(record, rowIndex, data, state)
-				} catch (err) {
-					setLoading(false)
-				}
-			}
-		}, 300)
 
-	}
-	function renderPrefix() {
-		const { isLeaf, state } = record
-		if (!isLeaf) {
-			const Square = state.isOpen ? MinusSquareOutlined : PlusSquareOutlined
-			const Folder = state.isOpen ? FolderOpenOutlined : FolderOutlined
-			const c = {
-				className: PERFIX_ICON,
-				onClick: clickHandle
-			}
-			return <>
-				<Square {...c} />
-				{
-					loading ?
-						<LoadingOutlined {...c} /> :
-						<Folder {...c} />
-				}
-			</>
-		}
-		return null
-	}
-	return <>
-		{prefix}{node}
-	</>
-}
-export const VirtualTable: FC<IVirtualTableProps> = (props) => {
-	const {
-		store,
-		rowHighlight,
-		paddingLeft,
-		valueKey,
-		loadingData,
-		columns,
-		generateNode,
-		clearHighlight
-	} = props
-	const key = (props.pagination || {}).current || KEY_ALL
-	const [update, forceUpdate] = useState(0)
-	const [tableWidth, setTableWidth] = useState(0)
-	const [widthColumns, occupyWidth] = useMemo((): [TEnhanceColumn[], number] => {
-		const ws = columns.filter((col: TEnhanceColumn) => col.width)
-		const ow = ws.reduce((widths: number, col: TEnhanceColumn) => widths + Number(col.width), 0)
-		return [ws, ow]
-	}, [columns])
-	const noneWidthColumnCount = columns.length - widthColumns.length
-	const widths = widthColumns.reduce((ws: number, cw: TEnhanceColumn) => ws + Number(cw.width), 0)
-	const mergedColumns = useMemo(() => {
-		let fontWidths = 0
-		return columns.map((column: TEnhanceColumn, index: number) => {
-			const lastItem = index === columns.length - 1
-			if (!noneWidthColumnCount && widths < tableWidth) {
-				const w = Number((tableWidth / columns.length).toFixed(6))
-				!lastItem && (fontWidths += w)
-				return {
-					...column,
-					width: lastItem ? tableWidth - fontWidths : w
-				}
-			}
-			if (column.width) {
-				return column
-			}
-			let width = Number(((tableWidth - occupyWidth) / noneWidthColumnCount).toFixed(6))
-			return {
-				...column,
-				width: width < 0 ? 0 : width
-			}
-		})
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [columns, tableWidth])
-	const gridRef = useRef<any>()
-	const [connectObject] = useState<any>(() => {
-		const obj = {}
-		Object.defineProperty(obj, 'scrollLeft', {
-			get: () => null,
-			set: (scrollLeft: number) => {
-				if (gridRef.current) {
-					gridRef.current.scrollTo({ scrollLeft })
-				}
-			},
-		})
-		return obj
-	})
-	// 缓存数据
-	const cacheDataSource = store.cacheDataSources[key] || []
-	function initCache() {
-		const data = (props.dataSource || []).reduce((acc: KV<any>, cur: TOriginalData) => {
-			acc.push({
-				id: cur[valueKey],
-				isleaf: cur.isleaf,
-				path: `-${cur[valueKey]}-`,
-				state: {
-					...JSON.parse(JSON.stringify(DEFAULT_STATE)),
-					childExpirationTime: Date.now() + EXPORATION_TIME
-				},
-				originalData: JSON.parse(JSON.stringify(cur))
-			})
-			return acc
-		}, [])
-		return data
-	}
-	function setCacheDataSource(data: TreeDataInterface[]) {
-		store.oldDataSource = JSON.parse(JSON.stringify(props.dataSource))
-		store.cacheDataSources[key] = data
-		forceUpdate(update + 1)
-	}
-	function getCacheChidlren(record: TOriginalData, rowIndex: number) {
-		cacheDataSource[rowIndex].state = {
-			...cacheDataSource[rowIndex].state,
-			isOpen: true
-		}
-		if (!Array.isArray((cacheDataSource[rowIndex] || {}).children)) {
-			return
-		}
-		const datas = ((cacheDataSource[rowIndex] || {})
-			.children || [])
-			.reduce((acc: { data: Array<any>, index: number }, cur: TreeDataInterface, i: number) => {
-				acc.data.push(cur)
-				if (cur.state.isOpen && (cur.children || []).length) {
-					const index = acc.index || i
-					acc.data.splice(index + 1, 0, ...(cur.children as TreeDataInterface[]))
-					acc.index = acc.index + (cur.children as TreeDataInterface[]).length + 1
-				}
-				return acc
-			}, { data: [], index: 0 })
-		cacheDataSource.splice(rowIndex + 1, 0, ...datas.data)
-		setCacheDataSource(cacheDataSource)
-	}
-	// 加载子节点数据
-	function addCacheChidlren(record: TOriginalData, rowIndex: number, children: TOriginalData[] = [], state: TreeDataInterface['state']) {
-		const { path, id } = record
-		const childExpirationTime = Date.now() + EXPORATION_TIME
-		const data = children.reduce((acc: KV<any>, cur: TOriginalData) => {
-			acc.push({
-				id: Number(`${cur[valueKey]}${id}`),
-				pid: id,
-				isleaf: cur.isleaf,
-				path: `${path}${cur[valueKey]}-`,
-				state: {
-					...JSON.parse(JSON.stringify(DEFAULT_STATE)),
-					// @ts-ignore
-					childExpirationTime,
-					...state
-				},
-				originalData: cur
-			})
-			return acc
-		}, []) as TreeDataInterface[]
-		cacheDataSource[rowIndex].state = {
-			...cacheDataSource[rowIndex].state,
-			childExpirationTime,
-			isOpen: true
-		}
-		cacheDataSource[rowIndex].children = data
-		cacheDataSource.splice(rowIndex + 1, 0, ...data)
-		setCacheDataSource(cacheDataSource)
-	}
-	function removeCacheChidlren(record: TOriginalData, rowIndex: number) {
-		const { path } = cacheDataSource[rowIndex]
-		const pattern = new RegExp(`^${path}`)
-		let i = rowIndex + 1
-		while (i < cacheDataSource.length && pattern.test(cacheDataSource[i].path)) {
-			i++
-		}
-		cacheDataSource[rowIndex].state = {
-			...cacheDataSource[rowIndex].state,
-			isOpen: false
-		}
-		cacheDataSource.splice(rowIndex + 1, i - rowIndex - 1)
-		setCacheDataSource(cacheDataSource)
-	}
-	const resetVirtualGrid = () => {
-		gridRef.current && gridRef.current.resetAfterIndices({
-			columnIndex: 0,
-			shouldForceUpdate: false,
-		})
-	}
-	resetVirtualGrid()
-	useEffect(() => {
-		/**
-		 * @TODO 切换分页时获取对应缓存的状态
-		 * **/
-		if (JSON.stringify(store.oldDataSource) !== JSON.stringify(props.dataSource)) {
-			setCacheDataSource(initCache())
-		}
-		return () => {
-			store.oldDataSource = []
-			// eslint-disable-next-line react-hooks/exhaustive-deps
-			store.cacheDataSources = {}
-		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [props.dataSource])
-	const rowHeight = (index: number): number => {
-		return (
-			typeof props.rowHeight === 'function' ?
-				props.rowHeight(index) :
-				typeof props.rowHeight === 'number' ?
-					props.rowHeight :
-					ROW_HEIGHT
-		) as number
-	}
-	const clickHandle = (e: React.MouseEvent) => {
-		const target = e.target as HTMLElement
-		const rowClassName = target.getAttribute(DATA_ROW_CLASS_NAME)
-		if (!rowHighlight || !rowClassName || !(gridRef.current || {})._outerRef) {
-			return
-		}
-		clearHighlight()
-		store.nodes = [...gridRef.current._outerRef.getElementsByClassName(rowClassName)]
-		store.nodes.forEach((node: HTMLElement) => {
-			node.classList.add(TR_SELECTED_CLS)
-		})
-	}
-	const getStyle = (style: CSSProperties, columnIndex: number, rowIndex: number) => {
-		const result: CSSProperties = {
-			...style,
-			lineHeight: (Number(style.height) / 2 + 'px'),
-		}
-		if (columnIndex === 0 && cacheDataSource[rowIndex]) {
-			const tier = cacheDataSource[rowIndex].path.split('-').filter(Boolean).length - 1
-			tier && (result.paddingLeft = tier * paddingLeft + 8)
-		}
-		return result
-	}
-	const renderVirtualList = (data: TEnhanceColumn[], { scrollbarSize, ref, onScroll }: any) => {
-		ref.current = connectObject
-		return (
-			<Grid
-				ref={gridRef}
-				className={classNames({
-					[VIRTUAL_GRID_CLS]: true,
-					[VIRTUAL_GRID_BORDERED_CLS]: props.bordered
-				})}
-				columnCount={mergedColumns.length}
-				columnWidth={index => {
-					const width = mergedColumns[index].width as number
-					return index === mergedColumns.length - 1 ? width - scrollbarSize - 1 : width
-				}}
-				height={200}
-				rowCount={cacheDataSource.length}
-				rowHeight={rowHeight}
-				width={tableWidth}
-				onScroll={({ scrollLeft }) => onScroll({ scrollLeft })}
-			>
-				{({ columnIndex, rowIndex, style }) => {
-					const customerConfig = rowHighlight ? {
-						[DATA_ROW_CLASS_NAME]: `row-${rowIndex}`,
-						onClick: clickHandle
-					} : undefined
-					return (
-						<div
-							className={classNames({
-								[VIRTUAL_TABLE_CELL_CLS]: true,
-								[VIRTUAL_TABLE_CELL_LAST_CLS]: columnIndex === mergedColumns.length - 1,
-								[VIRTUAL_TABLE_CELL_FIRST_CLS]: columnIndex === 0,
-								[`${ROW_HIGHLIGHT} row-${rowIndex}`]: rowHighlight
-							})}
-							style={getStyle(style, columnIndex, rowIndex)}
-							{...customerConfig}
-						>
-							<RenderGrid
-								valueKey={valueKey}
-								rawData={cacheDataSource}
-								rowIndex={rowIndex}
-								columnIndex={columnIndex}
-								loadingData={loadingData}
-								mergedColumns={mergedColumns}
-								addCacheChidlren={addCacheChidlren}
-								removeCacheChidlren={removeCacheChidlren}
-								getCacheChidlren={getCacheChidlren}
-								renderGrid={props.renderGrid}
-							/>
-						</div>
-					)
-				}}
-			</Grid>
-		)
-	}
-	return <ResizeObserver
-		onResize={({ width }) => {
-			clearTimeout(store.setTableWidthTimer)
-			store.setTableWidthTimer = setTimeout(() => setTableWidth(width), 10)
-		}}
-	>
-		{generateNode(renderVirtualList)}
-	</ResizeObserver>
-}
 const EnhanceTable: FC<IEnhanceTableProps> = (props) => {
 	const {
 		store,
@@ -407,8 +54,7 @@ const EnhanceTable: FC<IEnhanceTableProps> = (props) => {
 		const data = getChildrenItem(targetItem, columns)
 		if (Array.isArray(data) && data.length) {
 			orderBy(targetItem, nextItem, data)
-			// @ts-ignore
-			setColumns(transformColumns(columns))
+			setColumns(transformColumns(columns) as any)
 		}
 	}
 	function getChildrenItem(targetItem: TState, columns: TEnhanceColumn[]) {
@@ -429,17 +75,22 @@ const EnhanceTable: FC<IEnhanceTableProps> = (props) => {
 	const handleResize: THandleResizable = column => (e, data) => {
 		setGridProxyStyle(e, data, 'resize', ref)
 	}
+	const setContainerWidth = (newWidth: number, oldWidth: number | string = 0) => {
+		store.width = store.width - Number(oldWidth) + newWidth
+	}
 	const resizaStopCallback = (width: number, column: TEnhanceColumn, columns: TEnhanceColumn[]) => {
 		const { index, isLeaf } = column.state
 		if (isLeaf) {
 			const data = getChildrenItem(column.state, columns)
 			if (Array.isArray(data) && data.length) {
+				setContainerWidth(width, data[index].width)
 				data[index].width = width
 				setColumns([...columns])
 			}
 			return
 		}
 		columns[index].width = width
+		setContainerWidth(width, column.width)
 		setColumns([...columns])
 	}
 	const handleResizeStop: THandleResizableStop = column => (e, data, columns) => {
@@ -477,7 +128,7 @@ const EnhanceTable: FC<IEnhanceTableProps> = (props) => {
 		}
 		return col
 	}
-	function transformColumns(data: TColumn[]) {
+	function transformColumns(data: TColumn[] = []) {
 		return data.map((c: TColumn, index) => ({
 			...generateColumns(c, index, LEVEL_VALUE, index.toString()),
 			state: {
@@ -489,7 +140,7 @@ const EnhanceTable: FC<IEnhanceTableProps> = (props) => {
 		}))
 	}
 
-	const renderDragProviderItem = ({ state, title, node, className }: IRenderDragProviderItem) => {
+	const renderDragProviderItem = ({ state, title, node }: IRenderDragProviderItem) => {
 		const element = node ? node : title
 		return dragColumn && state && typeof state === "object" ?
 			<DragProvider.Item
@@ -517,9 +168,7 @@ const EnhanceTable: FC<IEnhanceTableProps> = (props) => {
 			height={0}
 			handle={<span
 				className={`react-resizable-handle react-resizable-handle-se ${CANCEL_FRAG_COLUMN_CLS}`}
-				onClick={e => {
-					e.stopPropagation();
-				}}
+				onClick={e => e.stopPropagation()}
 			/>}
 			onResize={onResize}
 			onResizeStart={onResizeStart}
@@ -549,19 +198,27 @@ const EnhanceTable: FC<IEnhanceTableProps> = (props) => {
 			!container && clearHighlight()
 		}
 	}
-
+	// 计算宽度，解决设置列宽后、拖拽调整列宽列宽不准的问题
+	const moldedbreadth = (data: any, ws: number = 0) => {
+		return data.reduce((acc: number, cur: any) => {
+			if (!Array.isArray(cur.children)) {
+				acc += Number(cur.width)
+			} else {
+				acc = moldedbreadth(cur.children, acc)
+			}
+			return acc
+		}, ws)
+	}
 	useEffect(() => {
 		rowHighlight && document.addEventListener('click', mouseClick)
-		return () => {
-			rowHighlight && document.removeEventListener('click', mouseClick)
-			store.nodes = []
-		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [rowHighlight])
 	useEffect(() => {
-		// @ts-ignore
-		setColumns(transformColumns(props.columns))
+		store.width = moldedbreadth(props.columns || [], 70)
+		setColumns(transformColumns(props.columns) as any)
 		return () => {
+			rowHighlight && document.removeEventListener('click', mouseClick)
+			store.nodes = []
 			store.destroy()
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
@@ -572,7 +229,11 @@ const EnhanceTable: FC<IEnhanceTableProps> = (props) => {
 	const generateNode = (body?: TBody) => {
 		const containerCnf = {
 			ref,
-			className: dragColumn ? [DRAG_TABLE_CLS, store.dragTableCls].join(" ") : undefined
+			className: dragColumn ? [DRAG_TABLE_CLS, store.dragTableCls].join(" ") : undefined,
+			style: {
+				maxWidth: "100%",
+				width: store.width || undefined
+			}
 		}
 		const tableCnf = {
 			...tableProps,
@@ -629,22 +290,24 @@ export function Table<RecordType extends object = any>(props: ITableProps<Record
 		loadingData,
 		...tableProps
 	} = props
-	const store = useRef<IStoreProps>({
+	const store = useMemo<IStoreProps>(() => ({
 		dragTableCls: `drag-table-${parseInt((Math.random() * 1000000).toString())}`,
 		hoverActiveItem: undefined,
 		setTableWidthTimer: null,
 		oldDataSource: [], // 只用于比对前后两次dataSource是否一样
 		cacheDataSources: {},// 缓存状态：例如展开、收起...
 		nodes: [],
+		width: 0,
 		destroy: () => {
-			store.current.hoverActiveItem = undefined
-			clearTimeout(store.current.setTableWidthTimer)
-			store.current.setTableWidthTimer = null
-			store.current.oldDataSource = []
-			store.current.cacheDataSources = {}
-			store.current.nodes = []
+			store.hoverActiveItem = undefined
+			clearTimeout(store.setTableWidthTimer)
+			store.setTableWidthTimer = null
+			store.oldDataSource = []
+			store.cacheDataSources = {}
+			store.nodes = []
+			store.width = 0
 		}
-	})
+	}), [])
 	if (
 		!Array.isArray(props.columns) ||
 		!(props.columns || []).length ||
@@ -653,7 +316,7 @@ export function Table<RecordType extends object = any>(props: ITableProps<Record
 		return <ATable {...tableProps} />
 	}
 
-	return <EnhanceTable {...props} store={store.current} columns={props.columns} />
+	return <EnhanceTable {...props} store={store} columns={props.columns} />
 }
 
 Table.defaultProps = {

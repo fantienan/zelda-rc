@@ -38,7 +38,6 @@ const Template: Story<ITableProps> = (args, i) => {
             y: bodyRect.height - 205 - 80
         })
     }, [])
-
     return <Table
         {...args}
         rowSelection={rowSelection}
@@ -54,5 +53,6 @@ Basice.args = {
     dragColumn: true,
     resizableColumn: true,
     loading: false,
-    bordered: true
+    bordered: true,
+    virtual: false
 }

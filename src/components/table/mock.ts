@@ -78,6 +78,7 @@ export const columns = [
         title: 'Company Name',
         dataIndex: 'companyName',
         key: 'companyName',
+        width: 200
       },
     ],
   },

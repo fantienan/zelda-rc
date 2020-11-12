@@ -79,6 +79,7 @@ export interface IStoreProps {
         [k: string]: TreeDataInterface[]
     }
     nodes: Array<HTMLElement>
+    width: number
 }
 export type TState = {
     index: number
