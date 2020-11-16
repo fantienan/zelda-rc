@@ -98,9 +98,12 @@ const Item: FC<IItemProps> = (props) => {
         })
         if (ref && ref.current) {
             const th = ref.current.closest(TH)
-            th && th.rowSpan > 1 && setStyle({
-                height: ref.current.closest(TH).getBoundingClientRect().height
-            })
+            if (th) {
+                setStyle({
+                    height: th.getBoundingClientRect().height,
+                })
+                th.style.padding = 0
+            }
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])

@@ -32,6 +32,7 @@ Basice.args = {
 	resizable: false,
 	title: "标题",
 	width: 800,
-	mask: false
+	mask: false,
+	
 }
 

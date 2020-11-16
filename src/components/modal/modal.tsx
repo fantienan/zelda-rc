@@ -91,10 +91,10 @@ interface IBasicsModalProps {
 	rndClassName?: string
 }
 export type TModalProps = Partial<IBasicsModalProps & ModalProps & { rndRef: RefObject<any> }>
-const Renderer: FC<TRendererProps> = (props) => {
+const Renderer = forwardRef((props: TRendererProps, ref: Ref<any>) => {
 	const { children, rndRef, visible, destroy, ...resetProps } = props
 	const [show, setShow] = useState<boolean>()
-	const store = useRef<{ modalProps: ModalProps }>({ modalProps: {} })
+	const [modalProps, setModalProps] = useState<ModalProps>()
 	const afterClose = () => {
 		destroy()
 		if (!props.destroyOnClose && rndRef.current.resizable) {
@@ -118,20 +118,27 @@ const Renderer: FC<TRendererProps> = (props) => {
 		} else if (typeof resetProps.getContainer === "function") {
 			modalProps.getContainer = resetProps.getContainer
 		}
-		store.current.modalProps = modalProps
+		setModalProps(modalProps)
 		setShow(props.visible)
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [props.visible])
-
-	return <AModal {...store.current.modalProps} visible={show} width={resetProps.width}>
+	useImperativeHandle(ref, () => ({
+		setKeyboard: (keyboard?: false) => {
+			setModalProps({
+				...modalProps,
+				keyboard
+			})
+		}
+	}))
+	return <AModal {...modalProps} visible={show} width={resetProps.width}>
 		{props.children}
 	</AModal>
-}
+})
 
 const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 	const { children, drag, style, centered, rnd = {}, store, visible, resizable, rndRef, rndClassName, ...resetProps } = props
 	const [update, forceupdate] = useState(1)
-
+	const rendererRef = useRef<any>()
 	// 兼容requestAnimationFrame
 	const requestAnimationFrameFn = (
 		window.requestAnimationFrame ||
@@ -331,6 +338,8 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 		const footerNodeRect = containerNode.querySelector(ANT_MODAL_FOOTER_SELECTOR).getBoundingClientRect()
 		bodyNode.style.height = containerNode.getBoundingClientRect().height - headerNodeRect.height - footerNodeRect.height + 'px'
 	}
+
+
 	const onResizeStart: RndResizeStartCallback = (e, dir, refToElement) => {
 		store.resizeing = true
 		typeof rnd.onResizeStart === 'function' && rnd.onResizeStart(e, dir, refToElement)
@@ -344,10 +353,13 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 		typeof rnd.onResizeStop === "function" && rnd.onResizeStop(e, dir, elementRef, delta, position)
 	}
 	const onDragStart: RndDragCallback = (e, data) => {
+		// 拖拽时点击esc禁止关闭modal
+		rendererRef.current.setKeyboard(false)
 		store.draging = true
 		typeof rnd.onDragStart === "function" && rnd.onDragStart(e, data)
 	}
 	const onDragStop: RndDragCallback = (e, data) => {
+		rendererRef.current.setKeyboard()
 		store.draging = false
 		typeof rnd.onDragStop === "function" && rnd.onDragStop(e, data)
 	}
@@ -383,6 +395,7 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 				onDragStop={onDragStop}
 			>
 				<Renderer
+					ref={rendererRef}
 					{...resetProps}
 					rndRef={rndRef}
 					visible={visible}
@@ -437,8 +450,7 @@ export const Modal = forwardRef((props: TModalProps, ref: Ref<any>) => {
 			}
 		}
 		if (close && !target.closest(`.${store.current.rndContainerCls}`) && typeof props.onCancel === "function") {
-			// @ts-ignore
-			props.onCancel(e)
+			props.onCancel(e as any)
 		}
 	}
 	useImperativeHandle(ref, () => ({
@@ -465,9 +477,8 @@ export const Modal = forwardRef((props: TModalProps, ref: Ref<any>) => {
 			enableResizing: resizable,
 			...rnd
 		}
-		if (!rnd?.cancel) {
-			rndCnf.cancel = RND_CANCEL_SELECTOR
-		}
+		!rnd?.cancel && (rndCnf.cancel = RND_CANCEL_SELECTOR)
+		!rnd?.bounds && (rndCnf.bounds = "body")
 		return rndCnf
 	}
 	return <EnhanceModal {...props} store={store.current} rnd={getRndCnf()} rndRef={rndRef}>
