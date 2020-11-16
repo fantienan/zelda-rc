@@ -1,51 +1,61 @@
 // @ts-nocheck
+
 // export const columns = [
-//     {
-//         title: 'Name',
-//         dataIndex: 'name',
-//         key: 'name'
-//     },
-//     {
-//         title: 'Age',
-//         dataIndex: 'age',
-//         key: 'age',
-//     },
-//     {
-//         title: 'Address',
-//         dataIndex: 'address',
-//         key: 'address',
-//     },
-//     {
-//         title: 'Tags',
-//         key: 'tags',
-//         dataIndex: 'tags'
-//     }
-// ];
-
-// export const data = [
-//     {
-//         key: '1',
-//         name: 'John Brown',
-//         age: 32,
-//         address: 'New York No. 1 Lake Park',
-//         tags: 'nice',
-//     },
-//     {
-//         key: '2',
-//         name: 'Jim Green',
-//         age: 42,
-//         address: 'London No. 1 Lake Park',
-//         tags: 'nice',
-//     },
-//     {
-//         key: '3',
-//         name: 'Joe Black',
-//         age: 32,
-//         address: 'Sidney No. 1 Lake Park',
-//         tags: 'cool',
-//     }
-// ];
-
+//   {
+//     title: 'Full Name',
+//     width: 100,
+//     dataIndex: 'name',
+//     key: 'name',
+//   },
+//   {
+//     title: 'Age',
+//     width: 100,
+//     dataIndex: 'age',
+//     key: 'age',
+//   },
+//   {
+//     title: 'Column 1',
+//     dataIndex: 'address',
+//     key: '1',
+//     width: 150,
+//   },
+//   {
+//     title: 'Column 2',
+//     dataIndex: 'address',
+//     key: '2',
+//     width: 150,
+//   },
+//   {
+//     title: 'Column 3',
+//     dataIndex: 'address',
+//     key: '3',
+//     width: 150,
+//   },
+//   {
+//     title: 'Column 4',
+//     dataIndex: 'address',
+//     key: '4',
+//     width: 150,
+//   },
+//   {
+//     title: 'Column 5',
+//     dataIndex: 'address',
+//     key: '5',
+//     width: 150,
+//   },
+//   {
+//     title: 'Column 6',
+//     dataIndex: 'address',
+//     key: '6',
+//     width: 150,
+//   },
+//   {
+//     title: 'Column 7',
+//     dataIndex: 'address',
+//     key: '7',
+//     width: 150,
+//   },
+// ]
 export const columns = [
   {
     title: 'Name',

@@ -41,7 +41,7 @@ const Template: Story<ITableProps> = (args, i) => {
     return <Table
         {...args}
         rowSelection={rowSelection}
-        dataSource={data}
+        // dataSource={data}
         columns={columns as ITableProps['columns']}
         scroll={scroll}
     />

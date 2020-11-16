@@ -1,4 +1,5 @@
 import React, { FC, CSSProperties } from 'react'
+import { createPortal } from 'react-dom'
 import { useDragLayer } from 'react-dnd'
 import { getItemStyles } from './utils'
 import { CUSTOM_DRAG_LAYER } from '../config'
@@ -38,7 +39,7 @@ const CustomDragLayer: FC = () => {
         return null
     }
     const { width, height } = item.node.current.parentElement.getBoundingClientRect() as IRect
-    return (
+    return createPortal(
         <div className={CUSTOM_DRAG_LAYER}
             style={{
                 ...style,
@@ -46,7 +47,8 @@ const CustomDragLayer: FC = () => {
             }}
         >
             {renderItem()}
-        </div>
+        </div>,
+        document.getElementsByTagName("body")[0]
     )
 }
 
