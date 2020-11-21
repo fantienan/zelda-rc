@@ -3,13 +3,8 @@
   .ant-table-thead {
     user-select: none;
     .ant-table-cell {
-      .drag-item {
-        display: flex;
-        align-items: center;
-        padding-left: 16px;
-        &.hover-active {
-          background-color: #f0f0f0;
-        }
+      &.hover-active {
+        background-color: #f0f0f0;
       }
       &.ant-table-cell-scrollbar {
         opacity: 0;
@@ -17,7 +12,14 @@
     }
   }
 }
-
+.custom-drag-layer,
+.ant-table-cell {
+  .drag-item {
+    display: flex;
+    align-items: center;
+    padding-left: 16px;
+  }
+}
 .react-resizable {
   position: relative;
   background-clip: padding-box;

@@ -41,11 +41,11 @@ const Item: FC<IItemProps> = (props) => {
             props.store.hoverActiveItem &&
                 props.store.hoverActiveItem.current &&
                 props.store.hoverActiveItem !== ref &&
-                props.store.hoverActiveItem.current.classList.remove(HOVER_ACTIVE_CLS)
+                props.store.hoverActiveItem.current.closest(TH).classList.remove(HOVER_ACTIVE_CLS)
 
             if (props.store.hoverActiveItem !== ref) {
                 props.store.hoverActiveItem = ref
-                ref.current.classList.add(HOVER_ACTIVE_CLS)
+                ref.current.closest(TH).classList.add(HOVER_ACTIVE_CLS)
             }
         },
         drop: (dragItem, monitor) => {
@@ -65,6 +65,7 @@ const Item: FC<IItemProps> = (props) => {
     const [/* { isDragging, opacity } */, drag, preview] = useDrag({
         item: {
             node: ref,
+            renderItem: () => <div className="drag-item" style={style}>{children}</div>,
             title,
             ...state
         },
@@ -87,7 +88,7 @@ const Item: FC<IItemProps> = (props) => {
             props.store.hoverActiveItem &&
             props.store.hoverActiveItem.current
         ) {
-            props.store.hoverActiveItem.current.classList.remove(HOVER_ACTIVE_CLS)
+            props.store.hoverActiveItem.current.closest(TH).classList.remove(HOVER_ACTIVE_CLS)
             props.store.hoverActiveItem = undefined
         }
     }

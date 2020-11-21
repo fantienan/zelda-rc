@@ -20,25 +20,18 @@ const style: CSSProperties = {
     alignItems: "center"
 }
 const CustomDragLayer: FC = () => {
-    const { itemType, isDragging, item, initialOffset, currentOffset } = useDragLayer(monitor => ({
+    const { isDragging, item, initialOffset, currentOffset } = useDragLayer(monitor => ({
         item: monitor.getItem(),
         itemType: monitor.getItemType(),
         initialOffset: monitor.getInitialSourceClientOffset(),
         currentOffset: monitor.getSourceClientOffset(),
         isDragging: monitor.isDragging(),
     }))
-    function renderItem() {
-        switch (itemType) {
-            case item.type:
-                return item.title
-            default:
-                return null
-        }
-    }
     if (!isDragging || !((item || {}).node || {}).current) {
         return null
     }
     const { width, height } = item.node.current.parentElement.getBoundingClientRect() as IRect
+    debugger
     return createPortal(
         <div className={CUSTOM_DRAG_LAYER}
             style={{
@@ -46,7 +39,7 @@ const CustomDragLayer: FC = () => {
                 ...getItemStyles({ initialOffset, currentOffset, width, height })
             }}
         >
-            {renderItem()}
+            {item.renderItem()}
         </div>,
         document.getElementsByTagName("body")[0]
     )
