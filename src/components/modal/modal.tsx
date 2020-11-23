@@ -106,8 +106,7 @@ const Renderer = forwardRef((props: TRendererProps, ref: Ref<any>) => {
 		typeof resetProps.afterClose === "function" && resetProps.afterClose()
 	}
 	useEffect(() => {
-		const modalProps = {
-			...resetProps,
+		const modalProps: any = {
 			mask: false,
 			maskClosable: false,
 			style: STYLE,
