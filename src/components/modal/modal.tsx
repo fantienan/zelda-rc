@@ -130,7 +130,7 @@ const Renderer = forwardRef((props: TRendererProps, ref: Ref<any>) => {
 			})
 		}
 	}))
-	return <AModal {...modalProps} visible={show} width={resetProps.width}>
+	return <AModal {...resetProps} {...modalProps} visible={show} width={resetProps.width}>
 		{props.children}
 	</AModal>
 })
