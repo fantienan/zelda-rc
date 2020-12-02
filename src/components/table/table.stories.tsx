@@ -22,15 +22,15 @@ const Template: Story<ITableProps> = (args, i) => {
             return {}
         }
     }
-    // const pagination = {
-    //     hideOnSinglePage: true,
-    //     showSizeChanger: false,
-    //     current: 1,
-    //     pageSize: 10,
-    //     showTotal: (total: any) => `共${total}条数据`,
-    //     onChange: (current: number, pageSize?: number | undefined) => {
-    //     }
-    // }
+    const pagination = {
+        hideOnSinglePage: true,
+        showSizeChanger: false,
+        current: 1,
+        pageSize: 10,
+        showTotal: (total: any) => `共${total}条数据`,
+        onChange: (current: number, pageSize?: number | undefined) => {
+        }
+    }
 
     useEffect(() => {
         const bodyRect = document.body.getBoundingClientRect()
@@ -40,8 +40,9 @@ const Template: Story<ITableProps> = (args, i) => {
     }, [])
     return <Table
         {...args}
+        pagination={pagination}
         rowSelection={rowSelection}
-        // dataSource={data}
+        dataSource={data}
         columns={columns as ITableProps['columns']}
         scroll={scroll}
     />
