@@ -31,7 +31,6 @@ const CustomDragLayer: FC = () => {
         return null
     }
     const { width, height } = item.node.current.parentElement.getBoundingClientRect() as IRect
-    debugger
     return createPortal(
         <div className={CUSTOM_DRAG_LAYER}
             style={{

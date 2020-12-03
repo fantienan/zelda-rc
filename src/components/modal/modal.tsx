@@ -1,17 +1,19 @@
-import React, { FC, CSSProperties, RefObject, ReactNode, useRef, useEffect, useState, Ref, forwardRef, useImperativeHandle } from "react"
+import React, {
+	FC, CSSProperties, RefObject, ReactNode, useRef, useEffect, useState,
+	Ref, forwardRef, useImperativeHandle
+} from "react"
 import { createPortal } from "react-dom"
 import { Modal as AModal } from "antd"
 import { Rnd, Props, RndResizeStartCallback, RndResizeCallback, RndDragCallback } from 'react-rnd'
 import { ModalProps } from 'antd/lib/modal'
 import {
 	RND_CLS, BOX_SHADOW, REACT_DRAGGBLE_DRAGGED, INIT_TIME_CLS, DESTROY_TIME_CLS, DEFAULT_CANCEL_CLOSABLE_CLASS_NAMES,
-	OVERFLOW_CLS, STYLE, TOLERANCE, DEFAULT_X, DEFAULT_Y, DELAY, BODY_TAG_NAME, RND_CANCEL_SELECTOR,
-	DEFAULT_WIDTH, MIN_HEIGHT, DEFAULT_RESIZE_GRID, ANT_MODAL_SELECTOR, ANT_MODAL_BODY_SELECTOR,
+	OVERFLOW_CLS, STYLE, TOLERANCE, DEFAULT_X, DEFAULT_Y, BODY_TAG_NAME, RND_CANCEL_SELECTOR, ANT_MODAL_CLS,
+	DEFAULT_WIDTH, MIN_HEIGHT, DEFAULT_RESIZE_GRID, ANT_MODAL_SELECTOR, ANT_MODAL_BODY_SELECTOR, RESIZE_HANDLE_WRAPPER_CLASS,
 	ANT_MODAL_HEADER_SELECTOR, ANT_MODAL_FOOTER_SELECTOR, RND_Z_INDEX, CANCEL_CLOSABLE_CLASS_NAME,
 } from './config'
 import './style/index'
 
-type TDelayTask = { modalNode: HTMLElement }
 interface IUpdate {
 	width?: number | string
 	height?: number | string
@@ -37,12 +39,16 @@ interface IStoreProps {
 	rndContainerCls: string
 	draging: boolean
 	resizeing: boolean
+	resizeingWidth: number
+	resizeingHeight: number
 }
 interface IRendererBasiceProps {
 	rndRef: RefObject<any>
 	destroy: Function
 }
-type TRendererProps = TModalProps & IRendererBasiceProps
+type TRendererProps = {
+	afterShowModalFn: (rect?: DOMRect) => void
+} & TModalProps & IRendererBasiceProps
 type TEnhanceModalProps = {
 	store: IStoreProps
 	rndRef: RefObject<any>
@@ -91,9 +97,29 @@ interface IBasicsModalProps {
 	rndClassName?: string
 }
 export type TModalProps = Partial<IBasicsModalProps & ModalProps & { rndRef: RefObject<any> }>
+interface IPlaceholder {
+	afterShowModalFn: (rect?: DOMRect) => void
+	visible?: boolean
+	rndRef: RefObject<any>
+}
+const Placeholder = (props: IPlaceholder) => {
+	const rect = useRef<DOMRect>()
+	useEffect(() => {
+		if (props.visible) {
+			if (!rect.current) {
+				const { resizable } = props.rndRef.current.resizable
+				rect.current = resizable.querySelector(ANT_MODAL_SELECTOR).getBoundingClientRect()
+			}
+			props.afterShowModalFn(rect.current)
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [props.visible])
+	return <div></div>
+}
 const Renderer = forwardRef((props: TRendererProps, ref: Ref<any>) => {
-	const { children, rndRef, visible, destroy, ...resetProps } = props
+	const { children, rndRef, visible, destroy, afterShowModalFn, ...resetProps } = props
 	const [show, setShow] = useState<boolean>()
+	const [width, setWidth] = useState<string | number | undefined>(resetProps.width)
 	const [modalProps, setModalProps] = useState<ModalProps>()
 	const afterClose = () => {
 		destroy()
@@ -105,6 +131,9 @@ const Renderer = forwardRef((props: TRendererProps, ref: Ref<any>) => {
 		}
 		typeof resetProps.afterClose === "function" && resetProps.afterClose()
 	}
+	useEffect(() => {
+		setWidth(resetProps.width)
+	}, [resetProps.width])
 	useEffect(() => {
 		const modalProps: any = {
 			mask: false,
@@ -127,53 +156,25 @@ const Renderer = forwardRef((props: TRendererProps, ref: Ref<any>) => {
 				...modalProps,
 				keyboard
 			})
+		},
+		setWidth: (width: number) => {
+			setWidth(width)
 		}
 	}))
-	return <AModal {...resetProps} {...modalProps} visible={show} width={resetProps.width}>
+	return <AModal {...resetProps} {...modalProps} visible={show} width={width}>
 		{props.children}
+		<Placeholder afterShowModalFn={afterShowModalFn} visible={visible} rndRef={rndRef} />
 	</AModal>
 })
 
 const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
-	const { children, drag, style, centered, rnd = {}, store, visible, resizable, rndRef, rndClassName, ...resetProps } = props
+	const {
+		children, drag, style, centered, rnd = {}, store, visible,
+		resizable, rndRef, rndClassName, closable, cancelClosableClassName,
+		...resetProps
+	} = props
 	const [update, forceupdate] = useState(1)
 	const rendererRef = useRef<any>()
-	// 兼容requestAnimationFrame
-	const requestAnimationFrameFn = (
-		window.requestAnimationFrame ||
-		window.webkitRequestAnimationFrame ||
-		function (cb: FrameRequestCallback) {
-			return window.setTimeout(cb, 1000 / 60)
-		}
-	)
-
-	const cancelAnimationFrameFn = (
-		window.cancelAnimationFrame ||
-		window.webkitCancelAnimationFrame ||
-		function (id: any) {
-			window.clearTimeout(id)
-		}
-	)
-
-	// 获取ant Modal
-	const fn = (cb: Function) => requestAnimationFrameFn(() => {
-		if (!rndRef.current) {
-			fn(cb)
-			return
-		}
-		const modalNode = rndRef.current.resizable.resizable.querySelector(ANT_MODAL_SELECTOR)
-		if (!modalNode) {
-			fn(cb)
-			return
-		}
-		cancelAnimationFrameFn(store.id)
-		cb({ modalNode })
-	})
-
-	const delayTask = (): Promise<TDelayTask> => new Promise((resolve, reject) => {
-		store.id = fn(({ modalNode }: TDelayTask) => setTimeout(() => resolve({ modalNode }), DELAY))
-	})
-
 	const updateRnd = ({ width = 0, height = 0, x = 0, y = 0 }: IUpdate) => {
 		!store.resizeing && rndRef.current.updateSize({ width, height })
 		!store.draging && rndRef.current.updatePosition({ x, y })
@@ -218,34 +219,37 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 	}
 
 	// Modal显示之后
-	const afterShowModalFn = async () => {
+	const afterShowModalFn = async (rect?: DOMRect) => {
 		if (rndRef.current) {
 			updateRnd(defaultRnd(updateRndProps()))
 			document.getElementsByTagName('body')[0].classList.add(OVERFLOW_CLS)
 			!rnd.default && rndRef.current.resizable.resizable.classList.add(INIT_TIME_CLS)
-			const { modalNode } = await delayTask()
-			const rect = modalNode.getBoundingClientRect()
 			// 反复切换drag时 rndRef.current会丢失
-			if (rndRef.current) {
-				rndRef.current.resizable.resizable.classList.add(BOX_SHADOW)
-				!rnd.default && rndRef.current.resizable.resizable.classList.remove(INIT_TIME_CLS)
+			if (rndRef.current && rect) {
+				// 是可拖拽给变大小并且拖拽改变大过
+				if (
+					rnd.enableResizing &&
+					store.resizeingHeight &&
+					store.resizeingWidth &&
+					!resetProps.destroyOnClose
+				) {
+					rect.width = store.resizeingWidth
+					rect.height = store.resizeingHeight
+				}
+				const { resizable } = rndRef.current.resizable
 				document.getElementsByTagName('body')[0].classList.remove(OVERFLOW_CLS)
 				if (rnd.default) {
+					resizable.classList.add(BOX_SHADOW)
 					return
 				}
-				const { width } = rect
-				updateRnd(defaultRnd({
-					width,
-					height: rect.height,
-					...getPosition(rect.width, rect.height)
-				}))
 				setTimeout(() => {
-					const { height } = modalNode.getBoundingClientRect()
 					updateRnd(defaultRnd({
-						width,
-						height,
-						...getPosition(rect.width, height)
+						width: rect.width,
+						height: rect.height,
+						...getPosition(rect.width, rect.height)
 					}))
+					resizable.classList.add(BOX_SHADOW)
+					resizable.classList.remove(INIT_TIME_CLS)
 				}, 300)
 			}
 		}
@@ -293,13 +297,35 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 			y: - DEFAULT_Y
 		})
 	}
-	useEffect(() => {
-		if (rndRef.current) {
-			if (visible) {
-				afterShowModalFn()
-			} else if (visible === false) {
-				afterHideModalFn()
+	function clickHandle(e: MouseEvent) {
+		if (!e.target || !props.visible || store.resizeing) return
+		const target = e.target as HTMLElement
+		// 兼容点击删除modal中元素
+		if (!document.body.contains(target)) return
+		let excludes = typeof cancelClosableClassName === "string" && !!cancelClosableClassName.trim() ?
+			[cancelClosableClassName] :
+			Array.isArray(cancelClosableClassName) && cancelClosableClassName.filter(v => v.toString().trim()).length ?
+				cancelClosableClassName :
+				[]
+		excludes = [
+			...DEFAULT_CANCEL_CLOSABLE_CLASS_NAMES,
+			...excludes
+		]
+		let close = true
+		for (let i = 0; i < excludes.length; i++) {
+			const cls = excludes[i].toString().trim()
+			if (target.closest(`.${cls}`)) {
+				close = false
+				break
 			}
+		}
+		if (close && !target.closest(`.${store.rndContainerCls}`) && typeof props.onCancel === "function") {
+			props.onCancel(e as any)
+		}
+	}
+	useEffect(() => {
+		if (rndRef.current && visible === false) {
+			afterHideModalFn()
 		}
 		return () => {
 			try {
@@ -312,6 +338,13 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [props.visible, props.drag])
+	useEffect(() => {
+		props.visible && closable && document.addEventListener('click', clickHandle)
+		return () => {
+			closable && document.removeEventListener('click', clickHandle)
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [props.visible, props.closable])
 	if (visible === undefined || store.destroyFlag) {
 		store.destroyFlag = false
 		return null
@@ -338,7 +371,6 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 		bodyNode.style.height = containerNode.getBoundingClientRect().height - headerNodeRect.height - footerNodeRect.height + 'px'
 	}
 
-
 	const onResizeStart: RndResizeStartCallback = (e, dir, refToElement) => {
 		store.resizeing = true
 		typeof rnd.onResizeStart === 'function' && rnd.onResizeStart(e, dir, refToElement)
@@ -348,7 +380,13 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 		typeof rnd.onResize === "function" && rnd.onResize(e, dir, refToElement, delta, position)
 	}
 	const onResizeStop: RndResizeCallback = (e, dir, elementRef, delta, position) => {
-		store.resizeing = false
+		const elementRefRect = elementRef.getBoundingClientRect()
+		store.resizeingHeight = elementRefRect.height
+		store.resizeingWidth = elementRefRect.width
+		rendererRef.current.setWidth(elementRefRect.width)
+		setTimeout(() => {
+			store.resizeing = false
+		}, 120)
 		typeof rnd.onResizeStop === "function" && rnd.onResizeStop(e, dir, elementRef, delta, position)
 	}
 	const onDragStart: RndDragCallback = (e, data) => {
@@ -362,16 +400,6 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 		store.draging = false
 		typeof rnd.onDragStop === "function" && rnd.onDragStop(e, data)
 	}
-	const getAModalWidth = () => {
-		if (visible === false && resizable && rndRef.current) {
-			const node = rndRef.current.resizable.resizable.querySelector(ANT_MODAL_SELECTOR)
-			const modalRect = node ? node.getBoundingClientRect() : { width: DEFAULT_WIDTH }
-			return { width: modalRect.width }
-		}
-		return {
-			width: resetProps.width
-		}
-	}
 	const maskWrapper = (children: ReactNode) => (
 		props.mask ?
 			<div className={visible ? "drag-modal-mask" : ""}>{children}</div> :
@@ -381,12 +409,17 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 		createPortal(maskWrapper(
 			<Rnd
 				ref={rndRef}
-				className={[RND_CLS, store.rndContainerCls, rndClassName].join(" ")}
+				className={[
+					RND_CLS, store.rndContainerCls, rndClassName,
+					rnd.enableResizing ? "enable-resizing" : ""
+				].join(" ")}
 				style={getRndStyle()}
 				minWidth={resetProps.width}
 				minHeight={MIN_HEIGHT}
 				resizeGrid={DEFAULT_RESIZE_GRID}
 				{...rnd}
+				resizeHandleWrapperClass={RESIZE_HANDLE_WRAPPER_CLASS}
+				dragHandleClassName={ANT_MODAL_CLS}
 				onResizeStart={onResizeStart}
 				onResize={onResize}
 				onResizeStop={onResizeStop}
@@ -399,7 +432,7 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 					rndRef={rndRef}
 					visible={visible}
 					destroy={destroy}
-					{...getAModalWidth()}
+					afterShowModalFn={afterShowModalFn}
 				>
 					{children}
 				</Renderer>
@@ -409,7 +442,7 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 	}</>
 }
 export const Modal = forwardRef((props: TModalProps, ref: Ref<any>) => {
-	const { children, drag, rnd, resizable, closable, cancelClosableClassName, rndClassName, ...modalProps } = props
+	const { children, drag, rnd, resizable, rndClassName, ...modalProps } = props
 	const store = useRef<IStoreProps>({
 		id: null,
 		destroyFlag: false,
@@ -419,61 +452,32 @@ export const Modal = forwardRef((props: TModalProps, ref: Ref<any>) => {
 		},
 		rndContainerCls: `${RND_CLS}-${parseInt((Math.random() * 1000000).toString())}`,
 		draging: false,
-		resizeing: false
+		resizeing: false,
+		resizeingWidth: 0,
+		resizeingHeight: 0
 	})
 	const rndRef = useRef<any>()
-	function clickHandle(e: MouseEvent) {
-		if (!e.target || !props.visible) {
-			return
-		}
-		const target = e.target as HTMLElement
-		// 兼容点击删除modal中元素
-		if (!document.body.contains(target)) {
-			return
-		}
-		let excludes = typeof cancelClosableClassName === "string" && !!cancelClosableClassName.trim() ?
-			[cancelClosableClassName] :
-			Array.isArray(cancelClosableClassName) && cancelClosableClassName.filter(v => v.toString().trim()).length ?
-				cancelClosableClassName :
-				[]
-		excludes = [
-			...DEFAULT_CANCEL_CLOSABLE_CLASS_NAMES,
-			...excludes
-		]
-		let close = true
-		for (let i = 0; i < excludes.length; i++) {
-			const cls = excludes[i].toString().trim()
-			if (target.closest(`.${cls}`)) {
-				close = false
-				break
-			}
-		}
-		if (close && !target.closest(`.${store.current.rndContainerCls}`) && typeof props.onCancel === "function") {
-			props.onCancel(e as any)
-		}
-	}
 	useImperativeHandle(ref, () => ({
 		rndRef
 	}))
 	useEffect(() => {
-		props.visible && closable && !props.mask && props.drag && document.addEventListener('click', clickHandle)
-		return () => {
-			closable && !props.mask && props.drag && document.removeEventListener('click', clickHandle)
-		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [props.visible, props.drag])
-	// 初始化时不渲染
-	if (props.visible === undefined) {
-		return null
-	}
-	if (!drag) {
+		store.current.resizeing = false
+		store.current.resizeingHeight = 0
+		store.current.resizeingWidth = 0
+	}, [props.resizable])
+	if (!drag && !resizable) {
 		return <AModal {...modalProps}>
 			{children}
 		</AModal>
 	}
+	// 初始化时不渲染
+	if (props.visible === undefined) {
+		return null
+	}
 	const getRndCnf = () => {
 		const rndCnf: Props = {
 			enableResizing: resizable,
+			disableDragging: !drag,
 			...rnd
 		}
 		!rnd?.cancel && (rndCnf.cancel = RND_CANCEL_SELECTOR)

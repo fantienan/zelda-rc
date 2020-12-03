@@ -43,13 +43,7 @@ const EnhanceTable: FC<IEnhanceTableProps> = (props) => {
 		}
 		if (!nextItem.isLeaf) {
 			orderBy(targetItem, nextItem)
-			return setColumns(columns.map((c, index) => ({
-				...c,
-				state: {
-					...c.state,
-					index
-				}
-			})))
+			return setColumns(transformColumns(columns) as any)
 		}
 		const data = getChildrenItem(targetItem, columns)
 		if (Array.isArray(data) && data.length) {

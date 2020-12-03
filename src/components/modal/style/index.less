@@ -1,8 +1,10 @@
 .rnd-container {
   z-index: 1000;
   background-color: transparent;
-  &.box-shadow {
+  > div {
     overflow: hidden !important;
+  }
+  &.box-shadow {
     .ant-modal-wrap,
     .ant-modal,
     .ant-modal-content {
@@ -13,20 +15,21 @@
   &.box-shadow {
     box-shadow: 0 3px 6px -4px rgba(0, 0, 0, 0.12),
       0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 9px 28px 8px rgba(0, 0, 0, 0.05);
+    &.enable-resizing {
+      .ant-modal {
+        width: 100% !important;
+      }
+    }
   }
   &.init-time {
     .ant-modal {
       top: 10px !important;
     }
   }
-  &:not(.init-time):not(.destroy-time) {
+  &.destroy-time {
     .ant-modal {
       margin: 0 !important;
-      width: 100% !important;
     }
-  }
-  &.destroy-time .ant-modal {
-    margin: 0 !important;
   }
 }
 

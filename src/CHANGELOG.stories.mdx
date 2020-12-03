@@ -13,7 +13,23 @@ import { Meta } from "@storybook/addon-docs/blocks";
 </div>
 # 更新日志
 
+# 0.4.9
+
+`2020-12-3`
+
+- modal
+
+  - 🐞 解决 Modal 组件连续快速操作打开-esc 关闭-打开-esc 关闭导致弹窗容器不能关闭问题
+  - ⚡️ 添加 dragHandleClassName 属性，解决弹窗之际快速点击空白处弹窗样式错乱问题
+  - 🐞 解决拖拽改变弹窗大小结束时弹窗消失问题
+  - ⚡️ 优化拖拽改变弹窗大小计算弹窗宽度逻辑
+  - 🐞 添加 Placeholder 组件优化 afterHideModalFn 声明周期的调用
+  - ⚡️ 优化 drag、resizeble 切换开启\关闭状态逻辑
+
+- ⚡️ 优化 table 组件拖拽改变列顺序的更新列数据 state 逻辑，解决拖拽失效问题
+
 # 0.4.7
+
 # 0.4.8
 
 `2020-11-23`

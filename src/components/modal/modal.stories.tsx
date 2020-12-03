@@ -29,9 +29,9 @@ const Template: Story<TModalProps> = (args, i) => {
 export const Basice = Template.bind({})
 Basice.args = {
 	drag: true,
-	resizable: false,
+	resizable: true,
 	title: "标题",
-	width: 800,
+	// width: 800,
 	mask: false,
 	
 }

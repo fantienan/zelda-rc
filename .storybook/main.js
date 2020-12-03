@@ -1,4 +1,6 @@
+const path = require("path");
 const HardSourceWebpackPlugin = require("hard-source-webpack-plugin");
+const pathResolve = (pathUrl) => path.join(__dirname, pathUrl);
 module.exports = {
   // stories: ["../src/**/*.stories.mdx", "../src/**/*.stories.@(js|jsx|ts|tsx)"],
   stories: [
@@ -30,6 +32,7 @@ module.exports = {
     },
   ],
   webpackFinal: async (config, { configType }) => {
+    config.resolve.alias["@"] = pathResolve("src");
     // config.module.rules.push({
     //   test: /\.(ts|tsx)$/,
     //   loader: require.resolve("babel-loader"),
