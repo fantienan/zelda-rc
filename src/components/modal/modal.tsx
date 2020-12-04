@@ -364,9 +364,8 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 		if (props.mask && !props.visible) {
 			clearTimeout(timer.current)
 			timer.current = setTimeout(() => {
-				maskRef.current.classList.add("display-none")
-				// maskRef.current.classList.remove(DRAG_MODAL_MASK_CLS)
-				// maskRef.current.classList.remove(DRAG_MODAL_MASK_HIDE_CLS)
+				maskRef.current.classList.remove(DRAG_MODAL_MASK_CLS)
+				maskRef.current.classList.remove(DRAG_MODAL_MASK_HIDE_CLS)
 			}, 900)
 		}
 		return () => {
