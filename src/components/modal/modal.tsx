@@ -10,7 +10,7 @@ import {
 	RND_CLS, BOX_SHADOW, REACT_DRAGGBLE_DRAGGED, INIT_TIME_CLS, DESTROY_TIME_CLS, DEFAULT_CANCEL_CLOSABLE_CLASS_NAMES,
 	OVERFLOW_CLS, STYLE, TOLERANCE, DEFAULT_X, DEFAULT_Y, BODY_TAG_NAME, RND_CANCEL_SELECTOR, ANT_MODAL_CLS,
 	DEFAULT_WIDTH, MIN_HEIGHT, DEFAULT_RESIZE_GRID, ANT_MODAL_SELECTOR, ANT_MODAL_BODY_SELECTOR, RESIZE_HANDLE_WRAPPER_CLASS,
-	ANT_MODAL_HEADER_SELECTOR, ANT_MODAL_FOOTER_SELECTOR, RND_Z_INDEX, CANCEL_CLOSABLE_CLASS_NAME, DRAG_MODAL_MASK_CLS, DRAG_MODAL_MASK_HIDE_CLS
+	ANT_MODAL_HEADER_SELECTOR, ANT_MODAL_FOOTER_SELECTOR, RND_Z_INDEX, CANCEL_CLOSABLE_CLASS_NAME, DRAG_MODAL_MASK_CLS
 } from './config'
 import './style/index'
 import useClick from "./use-click"
@@ -200,7 +200,7 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 	const [update, forceupdate] = useState(1)
 	const rendererRef = useRef<any>()
 	const maskRef = useRef<any>()
-	const timer = useRef<any>()
+	const [disableDragging, setDisableDragging] = useState<boolean | undefined>()
 	const updateRnd = ({ width = 0, height = 0, x = 0, y = 0 }: IUpdate) => {
 		!store.resizeing && rndRef.current.updateSize({ width, height })
 		!store.draging && rndRef.current.updatePosition({ x, y })
@@ -309,6 +309,7 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 		}
 	}
 	const destroy = () => {
+		setDisableDragging(undefined)
 		document.getElementsByTagName('body')[0].classList.remove(OVERFLOW_CLS)
 		// 销毁组件
 		if (resetProps.destroyOnClose) {
@@ -360,21 +361,6 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [props.visible, props.drag])
-	useEffect(() => {
-		if (props.mask && !props.visible) {
-			clearTimeout(timer.current)
-			timer.current = setTimeout(() => {
-				if (timer.current) {
-					maskRef.current.classList.remove(DRAG_MODAL_MASK_CLS)
-					maskRef.current.classList.remove(DRAG_MODAL_MASK_HIDE_CLS)
-				}
-			}, 900)
-		}
-		return () => {
-			clearTimeout(timer.current)
-		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [props.visible])
 	if (visible === undefined || store.destroyFlag) {
 		store.destroyFlag = false
 		return null
@@ -431,13 +417,16 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 		typeof rnd.onDragStop === "function" && rnd.onDragStop(e, data)
 	}
 	const clickMask = (e: React.MouseEvent) => props.mask && visible && clickHandle(e)
+	const onCancel = (e: any) => {
+		setDisableDragging(true)
+		typeof resetProps.onCancel === "function" && resetProps.onCancel(e)
+	}
 	return <>{
 		createPortal(
 			<div
 				ref={maskRef}
 				className={[
-					props.mask ? DRAG_MODAL_MASK_CLS : "",
-					!props.visible ? DRAG_MODAL_MASK_HIDE_CLS : ""
+					props.mask && props.visible ? DRAG_MODAL_MASK_CLS : ""
 				].join(" ")}
 				onClick={clickMask}
 			>
@@ -452,6 +441,7 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 					minHeight={MIN_HEIGHT}
 					resizeGrid={DEFAULT_RESIZE_GRID}
 					{...rnd}
+					disableDragging={disableDragging || rnd.disableDragging}
 					resizeHandleWrapperClass={RESIZE_HANDLE_WRAPPER_CLASS}
 					dragHandleClassName={ANT_MODAL_CLS}
 					onResizeStart={onResizeStart}
@@ -463,6 +453,7 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 					<Renderer
 						ref={rendererRef}
 						{...resetProps}
+						onCancel={onCancel}
 						rndRef={rndRef}
 						visible={visible}
 						destroy={destroy}
