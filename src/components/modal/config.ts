@@ -34,3 +34,5 @@ export const DEFAULT_CANCEL_CLOSABLE_CLASS_NAMES = [
 ]
 
 export const RESIZE_HANDLE_WRAPPER_CLASS = "resize-handler"
+export const DRAG_MODAL_MASK_CLS ="drag-modal-mask"
+export const DRAG_MODAL_MASK_HIDE_CLS = "drag-modal-mask-hide"

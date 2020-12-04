@@ -20,7 +20,7 @@ const useClick = (props: IUseClick) => {
             props.closable && !props.mask && document.removeEventListener('click', clickHandle)
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [props.visible, props.closable])
+    }, [props.visible, props.closable, props.mask])
     return null
 }
 

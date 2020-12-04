@@ -1,6 +1,6 @@
 {
   "name": "zelda-rc",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "private": false,
   "main": "dist/es/index.js",
   "module": "dist/es/index.js",

@@ -10,7 +10,7 @@ import {
 	RND_CLS, BOX_SHADOW, REACT_DRAGGBLE_DRAGGED, INIT_TIME_CLS, DESTROY_TIME_CLS, DEFAULT_CANCEL_CLOSABLE_CLASS_NAMES,
 	OVERFLOW_CLS, STYLE, TOLERANCE, DEFAULT_X, DEFAULT_Y, BODY_TAG_NAME, RND_CANCEL_SELECTOR, ANT_MODAL_CLS,
 	DEFAULT_WIDTH, MIN_HEIGHT, DEFAULT_RESIZE_GRID, ANT_MODAL_SELECTOR, ANT_MODAL_BODY_SELECTOR, RESIZE_HANDLE_WRAPPER_CLASS,
-	ANT_MODAL_HEADER_SELECTOR, ANT_MODAL_FOOTER_SELECTOR, RND_Z_INDEX, CANCEL_CLOSABLE_CLASS_NAME,
+	ANT_MODAL_HEADER_SELECTOR, ANT_MODAL_FOOTER_SELECTOR, RND_Z_INDEX, CANCEL_CLOSABLE_CLASS_NAME, DRAG_MODAL_MASK_CLS, DRAG_MODAL_MASK_HIDE_CLS
 } from './config'
 import './style/index'
 import useClick from "./use-click"
@@ -199,6 +199,8 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 	} = props
 	const [update, forceupdate] = useState(1)
 	const rendererRef = useRef<any>()
+	const maskRef = useRef<any>()
+	const timer = useRef<any>()
 	const updateRnd = ({ width = 0, height = 0, x = 0, y = 0 }: IUpdate) => {
 		!store.resizeing && rndRef.current.updateSize({ width, height })
 		!store.draging && rndRef.current.updatePosition({ x, y })
@@ -343,14 +345,10 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 				break
 			}
 		}
-		if (close && typeof props.onCancel === "function") {
-			props.onCancel(e as any)
-		}
+		close && typeof props.onCancel === "function" && props.onCancel(e as any)
 	}
 	useEffect(() => {
-		if (rndRef.current && visible === false) {
-			afterHideModalFn()
-		}
+		rndRef.current && visible === false && afterHideModalFn()
 		return () => {
 			try {
 				if (store.portals.node) {
@@ -362,6 +360,20 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [props.visible, props.drag])
+	useEffect(() => {
+		if (props.mask && !props.visible) {
+			clearTimeout(timer.current)
+			timer.current = setTimeout(() => {
+				maskRef.current.classList.add("display-none")
+				// maskRef.current.classList.remove(DRAG_MODAL_MASK_CLS)
+				// maskRef.current.classList.remove(DRAG_MODAL_MASK_HIDE_CLS)
+			}, 900)
+		}
+		return () => {
+			clearTimeout(timer.current)
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [props.visible])
 	if (visible === undefined || store.destroyFlag) {
 		store.destroyFlag = false
 		return null
@@ -417,45 +429,50 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 		store.draging = false
 		typeof rnd.onDragStop === "function" && rnd.onDragStop(e, data)
 	}
-	const maskWrapper = (children: ReactNode) => (
-		props.mask ?
-			<div className={visible ? "drag-modal-mask" : ""} onClick={clickHandle}>{children}</div> :
-			children
-	)
+	const clickMask = (e: React.MouseEvent) => props.mask && visible && clickHandle(e)
 	return <>{
-		createPortal(maskWrapper(
-			<Rnd
-				ref={rndRef}
+		createPortal(
+			<div
+				ref={maskRef}
 				className={[
-					RND_CLS, store.rndContainerCls, rndClassName,
-					rnd.enableResizing ? "enable-resizing" : ""
+					props.mask ? DRAG_MODAL_MASK_CLS : "",
+					!props.visible ? DRAG_MODAL_MASK_HIDE_CLS : ""
 				].join(" ")}
-				style={getRndStyle()}
-				minWidth={resetProps.width}
-				minHeight={MIN_HEIGHT}
-				resizeGrid={DEFAULT_RESIZE_GRID}
-				{...rnd}
-				resizeHandleWrapperClass={RESIZE_HANDLE_WRAPPER_CLASS}
-				dragHandleClassName={ANT_MODAL_CLS}
-				onResizeStart={onResizeStart}
-				onResize={onResize}
-				onResizeStop={onResizeStop}
-				onDragStart={onDragStart}
-				onDragStop={onDragStop}
+				onClick={clickMask}
 			>
-				<Renderer
-					ref={rendererRef}
-					{...resetProps}
-					rndRef={rndRef}
-					visible={visible}
-					destroy={destroy}
-					afterShowModalFn={afterShowModalFn}
-					clickHandle={clickHandle}
-					closable={closable}
+				<Rnd
+					ref={rndRef}
+					className={[
+						RND_CLS, store.rndContainerCls, rndClassName,
+						rnd.enableResizing ? "enable-resizing" : ""
+					].join(" ")}
+					style={getRndStyle()}
+					minWidth={resetProps.width}
+					minHeight={MIN_HEIGHT}
+					resizeGrid={DEFAULT_RESIZE_GRID}
+					{...rnd}
+					resizeHandleWrapperClass={RESIZE_HANDLE_WRAPPER_CLASS}
+					dragHandleClassName={ANT_MODAL_CLS}
+					onResizeStart={onResizeStart}
+					onResize={onResize}
+					onResizeStop={onResizeStop}
+					onDragStart={onDragStart}
+					onDragStop={onDragStop}
 				>
-					{children}
-				</Renderer>
-			</Rnd>),
+					<Renderer
+						ref={rendererRef}
+						{...resetProps}
+						rndRef={rndRef}
+						visible={visible}
+						destroy={destroy}
+						afterShowModalFn={afterShowModalFn}
+						clickHandle={clickHandle}
+						closable={closable}
+					>
+						{children}
+					</Renderer>
+				</Rnd>
+			</div>,
 			store.portals.node || document.getElementsByTagName("body")[0]
 		)
 	}</>

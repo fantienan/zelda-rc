@@ -46,7 +46,30 @@
   bottom: 0;
   z-index: 1000;
   background-color: rgba(0, 0, 0, 0.45);
+  animation: showMask 0.9s cubic-bezier(0.08, 0.82, 0.17, 1) both;
   .rnd-container {
     z-index: 1 !important;
+  }
+  &.drag-modal-mask-hide {
+    animation: hideMask 0.9s cubic-bezier(0.08, 0.82, 0.17, 1) both;
+  }
+  &.display-none {
+    display: none;
+  }
+  @keyframes showMask {
+    from {
+      background-color: rgba(0, 0, 0, 0);
+    }
+    to {
+      background-color: rgba(0, 0, 0, 0.45);
+    }
+  }
+  @keyframes hideMask {
+    from {
+      background-color: rgba(0, 0, 0, 0.45);
+    }
+    to {
+      background-color: rgba(0, 0, 0, 0);
+    }
   }
 }
