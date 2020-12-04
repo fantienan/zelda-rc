@@ -13,6 +13,7 @@ import {
 	ANT_MODAL_HEADER_SELECTOR, ANT_MODAL_FOOTER_SELECTOR, RND_Z_INDEX, CANCEL_CLOSABLE_CLASS_NAME,
 } from './config'
 import './style/index'
+import useClick from "./use-click"
 
 interface IUpdate {
 	width?: number | string
@@ -48,7 +49,18 @@ interface IRendererBasiceProps {
 }
 type TRendererProps = {
 	afterShowModalFn: (rect?: DOMRect) => void
+	clickHandle: (e: MouseEvent) => void
 } & TModalProps & IRendererBasiceProps
+
+interface IPlaceholder {
+	afterShowModalFn: (rect?: DOMRect) => void
+	clickHandle: (e: MouseEvent) => void
+	visible?: boolean
+	closable?: boolean
+	mask?: boolean
+	rndRef: RefObject<any>
+}
+
 type TEnhanceModalProps = {
 	store: IStoreProps
 	rndRef: RefObject<any>
@@ -97,13 +109,15 @@ interface IBasicsModalProps {
 	rndClassName?: string
 }
 export type TModalProps = Partial<IBasicsModalProps & ModalProps & { rndRef: RefObject<any> }>
-interface IPlaceholder {
-	afterShowModalFn: (rect?: DOMRect) => void
-	visible?: boolean
-	rndRef: RefObject<any>
-}
+
 const Placeholder = (props: IPlaceholder) => {
 	const rect = useRef<DOMRect>()
+	useClick({
+		visible: props.visible,
+		clickHandle: props.clickHandle,
+		closable: props.closable,
+		mask: props.mask
+	})
 	useEffect(() => {
 		if (props.visible) {
 			if (!rect.current) {
@@ -117,7 +131,10 @@ const Placeholder = (props: IPlaceholder) => {
 	return <div></div>
 }
 const Renderer = forwardRef((props: TRendererProps, ref: Ref<any>) => {
-	const { children, rndRef, visible, destroy, afterShowModalFn, ...resetProps } = props
+	const {
+		children, rndRef, visible, destroy, afterShowModalFn,
+		clickHandle, closable, ...resetProps
+	} = props
 	const [show, setShow] = useState<boolean>()
 	const [width, setWidth] = useState<string | number | undefined>(resetProps.width)
 	const [modalProps, setModalProps] = useState<ModalProps>()
@@ -163,7 +180,14 @@ const Renderer = forwardRef((props: TRendererProps, ref: Ref<any>) => {
 	}))
 	return <AModal {...resetProps} {...modalProps} visible={show} width={width}>
 		{props.children}
-		<Placeholder afterShowModalFn={afterShowModalFn} visible={visible} rndRef={rndRef} />
+		<Placeholder
+			afterShowModalFn={afterShowModalFn}
+			visible={visible}
+			clickHandle={clickHandle}
+			rndRef={rndRef}
+			closable={closable}
+			mask={resetProps.mask}
+		/>
 	</AModal>
 })
 
@@ -212,7 +236,6 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 		x: DEFAULT_X,
 		y: DEFAULT_Y - TOLERANCE
 	})
-
 
 	const defaultRnd = (cnf: ICnf) => {
 		return rnd.default || cnf
@@ -297,11 +320,12 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 			y: - DEFAULT_Y
 		})
 	}
-	function clickHandle(e: MouseEvent) {
+	function clickHandle(e: MouseEvent | React.MouseEvent) {
+		e.stopPropagation()
 		if (!e.target || !props.visible || store.resizeing) return
 		const target = e.target as HTMLElement
 		// 兼容点击删除modal中元素
-		if (!document.body.contains(target)) return
+		if (!document.body.contains(target) || target.closest(`.${RND_CLS}`)) return
 		let excludes = typeof cancelClosableClassName === "string" && !!cancelClosableClassName.trim() ?
 			[cancelClosableClassName] :
 			Array.isArray(cancelClosableClassName) && cancelClosableClassName.filter(v => v.toString().trim()).length ?
@@ -319,7 +343,7 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 				break
 			}
 		}
-		if (close && !target.closest(`.${store.rndContainerCls}`) && typeof props.onCancel === "function") {
+		if (close && typeof props.onCancel === "function") {
 			props.onCancel(e as any)
 		}
 	}
@@ -338,13 +362,6 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [props.visible, props.drag])
-	useEffect(() => {
-		props.visible && closable && document.addEventListener('click', clickHandle)
-		return () => {
-			closable && document.removeEventListener('click', clickHandle)
-		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [props.visible, props.closable])
 	if (visible === undefined || store.destroyFlag) {
 		store.destroyFlag = false
 		return null
@@ -402,7 +419,7 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 	}
 	const maskWrapper = (children: ReactNode) => (
 		props.mask ?
-			<div className={visible ? "drag-modal-mask" : ""}>{children}</div> :
+			<div className={visible ? "drag-modal-mask" : ""} onClick={clickHandle}>{children}</div> :
 			children
 	)
 	return <>{
@@ -433,6 +450,8 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 					visible={visible}
 					destroy={destroy}
 					afterShowModalFn={afterShowModalFn}
+					clickHandle={clickHandle}
+					closable={closable}
 				>
 					{children}
 				</Renderer>
