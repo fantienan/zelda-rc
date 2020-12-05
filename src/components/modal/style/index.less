@@ -45,10 +45,12 @@
   right: 0;
   bottom: 0;
   z-index: 1000;
-  background-color: rgba(0, 0, 0, 0.45);
-  animation: showMask 0.9s cubic-bezier(0.08, 0.82, 0.17, 1) both;
+  // background-color: rgba(0, 0, 0, 0.45);
   .rnd-container {
     z-index: 1 !important;
+  }
+  &.drag-modal-mask-show {
+    animation: showMask 0.9s cubic-bezier(0.08, 0.82, 0.17, 1) both;
   }
   &.drag-modal-mask-hide {
     animation: hideMask 0.9s cubic-bezier(0.08, 0.82, 0.17, 1) both;

@@ -8,9 +8,9 @@ import { Rnd, Props, RndResizeStartCallback, RndResizeCallback, RndDragCallback 
 import { ModalProps } from 'antd/lib/modal'
 import {
 	RND_CLS, BOX_SHADOW, REACT_DRAGGBLE_DRAGGED, INIT_TIME_CLS, DESTROY_TIME_CLS, DEFAULT_CANCEL_CLOSABLE_CLASS_NAMES,
-	OVERFLOW_CLS, STYLE, TOLERANCE, DEFAULT_X, DEFAULT_Y, BODY_TAG_NAME, RND_CANCEL_SELECTOR, ANT_MODAL_CLS,
+	OVERFLOW_CLS, STYLE, TOLERANCE, DEFAULT_X, DEFAULT_Y, BODY_TAG_NAME, RND_CANCEL_SELECTOR, ANT_MODAL_CLS, DRAG_MODAL_MASK_SHOW_CLS,
 	DEFAULT_WIDTH, MIN_HEIGHT, DEFAULT_RESIZE_GRID, ANT_MODAL_SELECTOR, ANT_MODAL_BODY_SELECTOR, RESIZE_HANDLE_WRAPPER_CLASS,
-	ANT_MODAL_HEADER_SELECTOR, ANT_MODAL_FOOTER_SELECTOR, RND_Z_INDEX, CANCEL_CLOSABLE_CLASS_NAME, DRAG_MODAL_MASK_CLS
+	ANT_MODAL_HEADER_SELECTOR, ANT_MODAL_FOOTER_SELECTOR, RND_Z_INDEX, CANCEL_CLOSABLE_CLASS_NAME, DRAG_MODAL_MASK_CLS, DRAG_MODAL_MASK_HIDE_CLS
 } from './config'
 import './style/index'
 import useClick from "./use-click"
@@ -65,6 +65,13 @@ type TEnhanceModalProps = {
 	store: IStoreProps
 	rndRef: RefObject<any>
 } & TModalProps
+
+interface IDragMask {
+	visible?: boolean
+	mask?: boolean
+	closable?: boolean
+	clickHandle: (e: React.MouseEvent) => void
+}
 interface IBasicsModalProps {
 	children?: ReactNode
 	/**
@@ -191,6 +198,29 @@ const Renderer = forwardRef((props: TRendererProps, ref: Ref<any>) => {
 	</AModal>
 })
 
+const DragMask: FC<IDragMask> = props => {
+	const [className, setClassName] = useState<string | undefined>()
+	const { visible, closable, mask } = props
+	const timer = useRef<any>()
+	useEffect(() => {
+		setClassName([
+			DRAG_MODAL_MASK_CLS,
+			visible ? DRAG_MODAL_MASK_SHOW_CLS : DRAG_MODAL_MASK_HIDE_CLS,
+		].join(" "))
+		if (!visible) {
+			clearTimeout(timer.current)
+			timer.current = setTimeout(() => {
+				setClassName(undefined)
+			}, 600)
+		}
+		return () => {
+			clearTimeout(timer.current)
+		}
+	}, [visible])
+	if (!mask) return null
+	const clickMask = (e: React.MouseEvent) => visible && closable && props.clickHandle(e)
+	return <div className={className} onClick={clickMask} />
+}
 const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 	const {
 		children, drag, style, centered, rnd = {}, store, visible,
@@ -199,13 +229,11 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 	} = props
 	const [update, forceupdate] = useState(1)
 	const rendererRef = useRef<any>()
-	const maskRef = useRef<any>()
 	const [disableDragging, setDisableDragging] = useState<boolean | undefined>()
 	const updateRnd = ({ width = 0, height = 0, x = 0, y = 0 }: IUpdate) => {
 		!store.resizeing && rndRef.current.updateSize({ width, height })
 		!store.draging && rndRef.current.updatePosition({ x, y })
 	}
-
 	const getPosition = (width: number, height: number) => {
 		const position = {
 			x: window.innerWidth / 2 - width / 2,
@@ -416,20 +444,19 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 		store.draging = false
 		typeof rnd.onDragStop === "function" && rnd.onDragStop(e, data)
 	}
-	const clickMask = (e: React.MouseEvent) => props.mask && visible && clickHandle(e)
 	const onCancel = (e: any) => {
 		setDisableDragging(true)
 		typeof resetProps.onCancel === "function" && resetProps.onCancel(e)
 	}
 	return <>{
 		createPortal(
-			<div
-				ref={maskRef}
-				className={[
-					props.mask && props.visible ? DRAG_MODAL_MASK_CLS : ""
-				].join(" ")}
-				onClick={clickMask}
-			>
+			<div>
+				<DragMask
+					mask={props.mask}
+					visible={props.visible}
+					closable={closable}
+					clickHandle={clickHandle}
+				/>
 				<Rnd
 					ref={rndRef}
 					className={[
