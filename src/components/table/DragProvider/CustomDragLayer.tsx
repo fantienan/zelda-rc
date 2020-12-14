@@ -25,7 +25,7 @@ const CustomDragLayer: FC = () => {
         itemType: monitor.getItemType(),
         initialOffset: monitor.getInitialSourceClientOffset(),
         currentOffset: monitor.getSourceClientOffset(),
-        isDragging: monitor.isDragging(),
+        isDragging: monitor.isDragging(), 
     }))
     if (!isDragging || !((item || {}).node || {}).current) {
         return null
