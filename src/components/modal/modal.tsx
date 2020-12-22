@@ -409,9 +409,12 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 	}
 	const setRect = () => {
 		const containerNode = rndRef.current.resizable.resizable
+		if (!containerNode) return
 		const bodyNode = containerNode.querySelector(ANT_MODAL_BODY_SELECTOR)
-		const headerNodeRect = containerNode.querySelector(ANT_MODAL_HEADER_SELECTOR).getBoundingClientRect()
-		const footerNodeRect = containerNode.querySelector(ANT_MODAL_FOOTER_SELECTOR).getBoundingClientRect()
+		const headerNode = containerNode.querySelector(ANT_MODAL_HEADER_SELECTOR)
+		const footerNode = containerNode.querySelector(ANT_MODAL_FOOTER_SELECTOR)
+		const headerNodeRect = headerNode ? headerNode.getBoundingClientRect() : { height: 0 }
+		const footerNodeRect = footerNode ? footerNode.getBoundingClientRect() : { height: 0 }
 		bodyNode.style.height = containerNode.getBoundingClientRect().height - headerNodeRect.height - footerNodeRect.height + 'px'
 	}
 
