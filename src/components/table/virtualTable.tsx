@@ -141,7 +141,6 @@ const VirtualTable: FC<IVirtualTableProps> = (props) => {
                 width: width < 0 ? 0 : width
             }
         })
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [columns, tableWidth])
     const gridRef = useRef<any>()
     const [connectObject] = useState<any>(() => {
@@ -260,10 +259,8 @@ const VirtualTable: FC<IVirtualTableProps> = (props) => {
         }
         return () => {
             store.oldDataSource = []
-            // eslint-disable-next-line react-hooks/exhaustive-deps
             store.cacheDataSources = {}
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [props.dataSource])
     const rowHeight = (index: number): number => {
         return (

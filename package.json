@@ -1,6 +1,6 @@
 {
   "name": "zelda-rc",
-  "version": "0.5.6",
+  "version": "0.5.7",
   "private": false,
   "main": "dist/es/index.js",
   "module": "dist/es/index.js",
@@ -68,7 +68,16 @@
     }
   },
   "eslintConfig": {
-    "extends": "react-app"
+    "extends": "react-app",
+    "rules": {
+      "react-hooks/exhaustive-deps": 0,
+      "import/no-anonymous-default-export": [
+        "error",
+        {
+          "allowObject": true
+        }
+      ]
+    }
   },
   "browserslist": {
     "production": [

@@ -10,6 +10,7 @@ export interface IItemProps {
     title: string | ReactNode
     store: IStoreProps
     moveCard: TMoveCard
+    size?: "small" | "middle" | "large"
 }
 export interface IDragItem extends DragObjectWithType {
     index: TState["index"]
@@ -19,8 +20,13 @@ export interface IDragItem extends DragObjectWithType {
     isLeaf: TState["isLeaf"]
     indexPath?: TState["indexPath"]
 }
+const size_trans_height: { [k: string]: number | string } = {
+    small: 39,
+    middle: 47,
+    large: 55
+}
 const Item: FC<IItemProps> = (props) => {
-    const { children, title, state, moveCard } = props
+    const { children, title, state, moveCard, size = "small" } = props
     const { type } = state
     const ref = useRef<any>()
     const [style, setStyle] = useState<CSSProperties>()
@@ -101,12 +107,11 @@ const Item: FC<IItemProps> = (props) => {
             const th = ref.current.closest(TH)
             if (th) {
                 setStyle({
-                    height: th.getBoundingClientRect().height,
+                    height: th.rowSpan * +size_trans_height[size],
                 })
                 th.style.padding = 0
             }
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
     return <div className="drag-item" ref={ref} style={style}>{children}</div>
 }

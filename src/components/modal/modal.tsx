@@ -133,7 +133,6 @@ const Placeholder = (props: IPlaceholder) => {
 			}
 			props.afterShowModalFn(rect.current)
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [props.visible])
 	return <div></div>
 }
@@ -172,7 +171,6 @@ const Renderer = forwardRef((props: TRendererProps, ref: Ref<any>) => {
 		}
 		setModalProps(modalProps)
 		setShow(props.visible)
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [props.visible])
 	useImperativeHandle(ref, () => ({
 		setKeyboard: (keyboard?: false) => {
@@ -274,6 +272,7 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 	// Modal显示之后
 	const afterShowModalFn = async (rect?: DOMRect) => {
 		if (rndRef.current) {
+			debugger
 			updateRnd(defaultRnd(updateRndProps()))
 			document.getElementsByTagName('body')[0].classList.add(OVERFLOW_CLS)
 			!rnd.default && rndRef.current.resizable.resizable.classList.add(INIT_TIME_CLS)
@@ -293,6 +292,7 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 				document.getElementsByTagName('body')[0].classList.remove(OVERFLOW_CLS)
 				if (rnd.default) {
 					resizable.classList.add(BOX_SHADOW)
+					rnd.enableResizing && setRect()
 					return
 				}
 				setTimeout(() => {
@@ -303,6 +303,7 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 					}))
 					resizable.classList.add(BOX_SHADOW)
 					resizable.classList.remove(INIT_TIME_CLS)
+					rnd.enableResizing && setRect()
 				}, 300)
 			}
 		}
@@ -382,12 +383,10 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 			try {
 				if (store.portals.node) {
 					document.getElementsByTagName("body")[0].removeChild(store.portals.node)
-					// eslint-disable-next-line react-hooks/exhaustive-deps
 					store.portals.node = null
 				}
 			} catch (e) { }
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [props.visible, props.drag])
 	if (visible === undefined || store.destroyFlag) {
 		store.destroyFlag = false
@@ -407,15 +406,16 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 			return acc
 		}, {}) as CSSProperties
 	}
-	const setRect = () => {
+	function setRect() {
 		const containerNode = rndRef.current.resizable.resizable
 		if (!containerNode) return
 		const bodyNode = containerNode.querySelector(ANT_MODAL_BODY_SELECTOR)
+		if (bodyNode.style.height) return
 		const headerNode = containerNode.querySelector(ANT_MODAL_HEADER_SELECTOR)
 		const footerNode = containerNode.querySelector(ANT_MODAL_FOOTER_SELECTOR)
 		const headerNodeRect = headerNode ? headerNode.getBoundingClientRect() : { height: 0 }
 		const footerNodeRect = footerNode ? footerNode.getBoundingClientRect() : { height: 0 }
-		bodyNode.style.height = containerNode.getBoundingClientRect().height - headerNodeRect.height - footerNodeRect.height + 'px'
+		bodyNode.style.height = `calc(100% - ${headerNodeRect.height + footerNodeRect.height}px)`
 	}
 
 	const onResizeStart: RndResizeStartCallback = (e, dir, refToElement) => {
