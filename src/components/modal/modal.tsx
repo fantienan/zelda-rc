@@ -72,6 +72,13 @@ interface IDragMask {
 	closable?: boolean
 	clickHandle: (e: React.MouseEvent) => void
 }
+interface IRndRef {
+	updateSize(size: { width: string | number, height: string | number }): void
+	updatePosition(position: { x: number, y: number }): void
+}
+export interface IRef {
+	rndRef?: IRndRef
+}
 interface IBasicsModalProps {
 	children?: ReactNode
 	/**
@@ -114,8 +121,12 @@ interface IBasicsModalProps {
 	 * rnd className
 	*/
 	rndClassName?: string
+	/**
+	 * 组件实例
+	*/
+	ref?: Ref<IRef>
 }
-export type TModalProps = Partial<IBasicsModalProps & ModalProps & { rndRef: RefObject<any> }>
+export type TModalProps = Partial<IBasicsModalProps & ModalProps>
 
 const Placeholder = (props: IPlaceholder) => {
 	const rect = useRef<DOMRect>()
@@ -133,6 +144,7 @@ const Placeholder = (props: IPlaceholder) => {
 			}
 			props.afterShowModalFn(rect.current)
 		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [props.visible])
 	return <div></div>
 }
@@ -171,6 +183,7 @@ const Renderer = forwardRef((props: TRendererProps, ref: Ref<any>) => {
 		}
 		setModalProps(modalProps)
 		setShow(props.visible)
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [props.visible])
 	useImperativeHandle(ref, () => ({
 		setKeyboard: (keyboard?: false) => {
@@ -272,7 +285,6 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 	// Modal显示之后
 	const afterShowModalFn = async (rect?: DOMRect) => {
 		if (rndRef.current) {
-			debugger
 			updateRnd(defaultRnd(updateRndProps()))
 			document.getElementsByTagName('body')[0].classList.add(OVERFLOW_CLS)
 			!rnd.default && rndRef.current.resizable.resizable.classList.add(INIT_TIME_CLS)
@@ -292,7 +304,6 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 				document.getElementsByTagName('body')[0].classList.remove(OVERFLOW_CLS)
 				if (rnd.default) {
 					resizable.classList.add(BOX_SHADOW)
-					rnd.enableResizing && setRect()
 					return
 				}
 				setTimeout(() => {
@@ -303,7 +314,6 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 					}))
 					resizable.classList.add(BOX_SHADOW)
 					resizable.classList.remove(INIT_TIME_CLS)
-					rnd.enableResizing && setRect()
 				}, 300)
 			}
 		}
@@ -383,10 +393,12 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 			try {
 				if (store.portals.node) {
 					document.getElementsByTagName("body")[0].removeChild(store.portals.node)
+					// eslint-disable-next-line react-hooks/exhaustive-deps
 					store.portals.node = null
 				}
 			} catch (e) { }
 		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [props.visible, props.drag])
 	if (visible === undefined || store.destroyFlag) {
 		store.destroyFlag = false
@@ -406,16 +418,15 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 			return acc
 		}, {}) as CSSProperties
 	}
-	function setRect() {
+	const setRect = () => {
 		const containerNode = rndRef.current.resizable.resizable
 		if (!containerNode) return
 		const bodyNode = containerNode.querySelector(ANT_MODAL_BODY_SELECTOR)
-		if (bodyNode.style.height) return
 		const headerNode = containerNode.querySelector(ANT_MODAL_HEADER_SELECTOR)
 		const footerNode = containerNode.querySelector(ANT_MODAL_FOOTER_SELECTOR)
 		const headerNodeRect = headerNode ? headerNode.getBoundingClientRect() : { height: 0 }
 		const footerNodeRect = footerNode ? footerNode.getBoundingClientRect() : { height: 0 }
-		bodyNode.style.height = `calc(100% - ${headerNodeRect.height + footerNodeRect.height}px)`
+		bodyNode.style.height = containerNode.getBoundingClientRect().height - headerNodeRect.height - footerNodeRect.height + 'px'
 	}
 
 	const onResizeStart: RndResizeStartCallback = (e, dir, refToElement) => {
@@ -499,8 +510,9 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 		)
 	}</>
 }
-export const Modal = forwardRef((props: TModalProps, ref: Ref<any>) => {
+export const Modal = forwardRef<IRef | undefined, TModalProps>((props, ref) => {
 	const { children, drag, rnd, resizable, rndClassName, ...modalProps } = props
+	const [initializeTime, setInitializeTime] = useState(true) // 标识modal是否是初始化
 	const store = useRef<IStoreProps>({
 		id: null,
 		destroyFlag: false,
@@ -514,24 +526,32 @@ export const Modal = forwardRef((props: TModalProps, ref: Ref<any>) => {
 		resizeingWidth: 0,
 		resizeingHeight: 0
 	})
-	const rndRef = useRef<any>()
+	const rndRef = useRef<IRndRef>()
 	useImperativeHandle(ref, () => ({
-		rndRef
+		rndRef: rndRef.current
 	}))
 	useEffect(() => {
 		store.current.resizeing = false
 		store.current.resizeingHeight = 0
 		store.current.resizeingWidth = 0
 	}, [props.resizable])
+	useEffect(() => {
+		// modal默认是显示状态
+		if (initializeTime && props.visible) {
+			setInitializeTime(false)
+		}
+	}, [])
+	useEffect(() => {
+		if (initializeTime && props.visible) {
+			setInitializeTime(false)
+		}
+	}, [props.visible])
 	if (!drag && !resizable) {
 		return <AModal {...modalProps}>
 			{children}
 		</AModal>
 	}
-	// 初始化时不渲染
-	if (props.visible === undefined) {
-		return null
-	}
+	if (initializeTime) return null
 	const getRndCnf = () => {
 		const rndCnf: Props = {
 			enableResizing: resizable,
@@ -553,7 +573,7 @@ Modal.defaultProps = {
 	closable: true,
 	zIndex: RND_Z_INDEX,
 	cancelClosableClassName: CANCEL_CLOSABLE_CLASS_NAME,
-	rndClassName: ""
+	mask: false
 }
 
 export default Modal;

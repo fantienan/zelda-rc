@@ -134,15 +134,15 @@ const EnhanceTable: FC<IEnhanceTableProps> = (props) => {
 		}))
 	}
 
-	const renderDragProviderItem = ({ state, title, node }: IRenderDragProviderItem) => {
+	const renderDragProviderItem = ({ state, title, node, width }: IRenderDragProviderItem) => {
 		const element = node ? node : title
 		return dragColumn && state && typeof state === "object" ?
 			<DragProvider.Item
 				state={state}
 				title={title}
 				store={store}
+				width={width}
 				moveCard={moveCard}
-				size={tableProps.size}
 			>
 				{element}
 			</DragProvider.Item> :
@@ -156,7 +156,7 @@ const EnhanceTable: FC<IEnhanceTableProps> = (props) => {
 		 */
 		const node = undefined
 		const th = <th {...restProps} >
-			{renderDragProviderItem({ state, title: argus.children[1], node, className: argus.className })}
+			{renderDragProviderItem({ state, title: argus.children[1], node, className: argus.className, width })}
 		</th>
 		return resizableColumn ? <Resizable
 			width={width || 0}
@@ -176,7 +176,7 @@ const EnhanceTable: FC<IEnhanceTableProps> = (props) => {
 	const headerCell = (argus: IHeaderCellProps) => {
 		let { onResize, onResizeStart, onResizeStop, width, state, ...restProps } = argus
 		return width === undefined ?
-			<th {...restProps} >{renderDragProviderItem({ state, title: argus.children[1], className: argus.className })}</th> :
+			<th {...restProps} >{renderDragProviderItem({ state, title: argus.children[1], className: argus.className, width })}</th> :
 			renderResize(argus)
 	}
 	function clearHighlight() {
@@ -206,6 +206,7 @@ const EnhanceTable: FC<IEnhanceTableProps> = (props) => {
 	}
 	useEffect(() => {
 		rowHighlight && document.addEventListener('click', mouseClick)
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [rowHighlight])
 	useEffect(() => {
 		store.width = moldedbreadth(props.columns || [], props.rowSelection ? 66 : 6)
@@ -215,6 +216,7 @@ const EnhanceTable: FC<IEnhanceTableProps> = (props) => {
 			store.nodes = []
 			store.destroy()
 		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [props.columns])
 	if (!columns.length) {
 		return null
