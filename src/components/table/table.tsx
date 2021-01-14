@@ -209,7 +209,7 @@ const EnhanceTable: FC<IEnhanceTableProps> = (props) => {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [rowHighlight])
 	useEffect(() => {
-		store.width = moldedbreadth(props.columns || [], props.rowSelection ? 66 : 6)
+		store.width = moldedbreadth(props.columns || [], props.rowSelection ? 68 : 8)
 		setColumns(transformColumns(props.columns) as any)
 		return () => {
 			rowHighlight && document.removeEventListener('click', mouseClick)

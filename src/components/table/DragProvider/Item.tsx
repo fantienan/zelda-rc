@@ -103,7 +103,8 @@ const Item: FC<IItemProps> = (props) => {
             const rect = th.getBoundingClientRect()
             if (th) {
                 setStyle({
-                    height: rect.height,
+                    // height: rect.height,
+                    padding: getComputedStyle(th).getPropertyValue("padding"),
                     width: props.width || rect.width
                 })
                 th.style.padding = 0
