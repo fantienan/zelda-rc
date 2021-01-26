@@ -111,6 +111,17 @@ export default function request(option: TRequestProps): Promise<IRes | undefined
     }
     delete newOptions.body;
   }
+
+  if (newOptions.method === "POST" && pattern.test(url) && bodyIsObject) {
+    const body = newOptions.body as KV
+    Object.keys(body).forEach(key => {
+      if (url.includes(`{${key}}`)) {
+        url = url.replace(`{${key}}`, body[key])
+        delete body[key]
+      }
+    })
+  }
+  
   if (newOptions.method === "DELETE" && pattern.test(url) && bodyIsObject) {
     const body = newOptions.body as KV
     Object.keys(body).forEach(key => {

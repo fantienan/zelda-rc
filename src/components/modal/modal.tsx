@@ -307,16 +307,26 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 					return
 				}
 				setTimeout(() => {
+					const { height } = resizable.querySelector(ANT_MODAL_SELECTOR).getBoundingClientRect()
 					updateRnd(defaultRnd({
 						width: rect.width,
-						height: rect.height,
+						height: rect.height > height ? rect.height : height,
 						...getPosition(rect.width, rect.height)
 					}))
 					resizable.classList.add(BOX_SHADOW)
 					resizable.classList.remove(INIT_TIME_CLS)
+					afresh()
 				}, 300)
 			}
 		}
+	}
+	const afresh = () => {
+		setTimeout(() => {
+			if (!store.resizeing) {
+				const { width, height } = rndRef.current.resizable.resizable.querySelector(ANT_MODAL_SELECTOR).getBoundingClientRect()
+				rndRef.current.updateSize({ width, height })
+			}
+		}, 100)
 	}
 	// Modal隐藏之后
 	const afterHideModalFn = () => {
