@@ -8,7 +8,7 @@ import { Rnd, Props, RndResizeStartCallback, RndResizeCallback, RndDragCallback 
 import { ModalProps } from 'antd/lib/modal'
 import {
 	RND_CLS, BOX_SHADOW, REACT_DRAGGBLE_DRAGGED, INIT_TIME_CLS, DESTROY_TIME_CLS, DEFAULT_CANCEL_CLOSABLE_CLASS_NAMES,
-	OVERFLOW_CLS, STYLE, TOLERANCE, DEFAULT_X, DEFAULT_Y, BODY_TAG_NAME, RND_CANCEL_SELECTOR, ANT_MODAL_CLS, DRAG_MODAL_MASK_SHOW_CLS,
+	OVERFLOW_CLS, STYLE, TOLERANCE, DEFAULT_X, DEFAULT_Y, BODY_TAG_NAME, RND_CANCEL_SELECTOR, DRAG_MODAL_MASK_SHOW_CLS,
 	DEFAULT_WIDTH, MIN_HEIGHT, DEFAULT_RESIZE_GRID, ANT_MODAL_SELECTOR, ANT_MODAL_BODY_SELECTOR, RESIZE_HANDLE_WRAPPER_CLASS,
 	ANT_MODAL_HEADER_SELECTOR, ANT_MODAL_FOOTER_SELECTOR, RND_Z_INDEX, CANCEL_CLOSABLE_CLASS_NAME, DRAG_MODAL_MASK_CLS, DRAG_MODAL_MASK_HIDE_CLS
 } from './config'
@@ -494,7 +494,6 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 					{...rnd}
 					disableDragging={disableDragging || rnd.disableDragging}
 					resizeHandleWrapperClass={RESIZE_HANDLE_WRAPPER_CLASS}
-					dragHandleClassName={ANT_MODAL_CLS}
 					onResizeStart={onResizeStart}
 					onResize={onResize}
 					onResizeStop={onResizeStop}
@@ -566,6 +565,7 @@ export const Modal = forwardRef<IRef | undefined, TModalProps>((props, ref) => {
 		const rndCnf: Props = {
 			enableResizing: resizable,
 			disableDragging: !drag,
+			dragHandleClassName: rnd?.dragHandleClassName || ANT_MODAL_HEADER_SELECTOR.slice(1),
 			...rnd
 		}
 		!rnd?.cancel && (rndCnf.cancel = RND_CANCEL_SELECTOR)
