@@ -7,7 +7,7 @@ import { Modal as AModal } from "antd"
 import { Rnd, Props, RndResizeStartCallback, RndResizeCallback, RndDragCallback } from 'react-rnd'
 import { ModalProps } from 'antd/lib/modal'
 import {
-	RND_CLS, BOX_SHADOW, REACT_DRAGGBLE_DRAGGED, INIT_TIME_CLS, DESTROY_TIME_CLS, DEFAULT_CANCEL_CLOSABLE_CLASS_NAMES,
+	RND_CLS, BOX_SHADOW, REACT_DRAGGBLE_DRAGGED, INIT_TIME_CLS, DESTROY_TIME_CLS, DEFAULT_CANCEL_CLOSABLE_CLASS_NAMES,HAS_DEFAULT_CLS,
 	OVERFLOW_CLS, STYLE, TOLERANCE, DEFAULT_X, DEFAULT_Y, BODY_TAG_NAME, RND_CANCEL_SELECTOR, DRAG_MODAL_MASK_SHOW_CLS,
 	DEFAULT_WIDTH, MIN_HEIGHT, DEFAULT_RESIZE_GRID, ANT_MODAL_SELECTOR, ANT_MODAL_BODY_SELECTOR, RESIZE_HANDLE_WRAPPER_CLASS,
 	ANT_MODAL_HEADER_SELECTOR, ANT_MODAL_FOOTER_SELECTOR, RND_Z_INDEX, CANCEL_CLOSABLE_CLASS_NAME, DRAG_MODAL_MASK_CLS, DRAG_MODAL_MASK_HIDE_CLS
@@ -278,16 +278,22 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 		y: DEFAULT_Y - TOLERANCE
 	})
 
-	const defaultRnd = (cnf: ICnf) => {
-		return rnd.default || cnf
-	}
-
 	// Modal显示之后
 	const afterShowModalFn = async (rect?: DOMRect) => {
 		if (rndRef.current) {
-			updateRnd(defaultRnd(updateRndProps()))
 			document.getElementsByTagName('body')[0].classList.add(OVERFLOW_CLS)
-			!rnd.default && rndRef.current.resizable.resizable.classList.add(INIT_TIME_CLS)
+			if (rnd.default) {
+				rndRef.current.resizable.resizable.classList.add(HAS_DEFAULT_CLS)
+				updateRnd({
+					x: rnd.default.x,
+					y: rnd.default.y,
+					width: window.innerWidth - rnd.default.x,
+					height: window.innerHeight - rnd.default.y
+				})
+			} else {
+				updateRnd(updateRndProps())
+				rndRef.current.resizable.resizable.classList.add(INIT_TIME_CLS)
+			}
 			// 反复切换drag时 rndRef.current会丢失
 			if (rndRef.current && rect) {
 				// 是可拖拽给变大小并且拖拽改变大过
@@ -303,16 +309,19 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 				const { resizable } = rndRef.current.resizable
 				document.getElementsByTagName('body')[0].classList.remove(OVERFLOW_CLS)
 				if (rnd.default) {
-					resizable.classList.add(BOX_SHADOW)
+					setTimeout(() => {
+						resizable.classList.add(BOX_SHADOW)
+						updateRnd(rnd.default || {})
+					}, 300)
 					return
 				}
 				setTimeout(() => {
 					const { height } = resizable.querySelector(ANT_MODAL_SELECTOR).getBoundingClientRect()
-					updateRnd(defaultRnd({
+					updateRnd({
 						width: rect.width,
 						height: rect.height > height ? rect.height : height,
 						...getPosition(rect.width, rect.height)
-					}))
+					})
 					resizable.classList.add(BOX_SHADOW)
 					resizable.classList.remove(INIT_TIME_CLS)
 					afresh()
@@ -438,7 +447,20 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 		const footerNodeRect = footerNode ? footerNode.getBoundingClientRect() : { height: 0 }
 		bodyNode.style.height = containerNode.getBoundingClientRect().height - headerNodeRect.height - footerNodeRect.height + 'px'
 	}
-
+	const resetRnd = () => {
+		if (rnd?.default) {
+			return {
+				...rnd,
+				default: {
+					x: rnd.default.x,
+					y: rnd.default.y,
+					width: window.innerWidth - rnd.default.x,
+					height: window.innerHeight - rnd.default.y
+				}
+			}
+		} 
+		return rnd
+	}
 	const onResizeStart: RndResizeStartCallback = (e, dir, refToElement) => {
 		store.resizeing = true
 		typeof rnd.onResizeStart === 'function' && rnd.onResizeStart(e, dir, refToElement)
@@ -491,7 +513,7 @@ const EnhanceModal: FC<TEnhanceModalProps> = (props) => {
 					minWidth={resetProps.width}
 					minHeight={MIN_HEIGHT}
 					resizeGrid={DEFAULT_RESIZE_GRID}
-					{...rnd}
+					{...resetRnd()}
 					disableDragging={disableDragging || rnd.disableDragging}
 					resizeHandleWrapperClass={RESIZE_HANDLE_WRAPPER_CLASS}
 					onResizeStart={onResizeStart}

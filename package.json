@@ -1,6 +1,6 @@
 {
   "name": "zelda-rc",
-  "version": "0.5.14",
+  "version": "0.5.15",
   "private": false,
   "main": "dist/es/index.js",
   "module": "dist/es/index.js",
@@ -109,7 +109,7 @@
     "@types/node": "^12.0.0",
     "@types/react": "^16.9.0",
     "@types/react-dom": "^16.9.0",
-    "antd": "^4.9.1",
+    "antd": "4.9.1",
     "babel-loader": "^8.1.0",
     "babel-plugin-import": "^1.13.0",
     "craco-less": "^1.17.0",

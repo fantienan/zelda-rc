@@ -19,6 +19,7 @@ const Template: Story<TModalProps> = (args, i) => {
 			visible={visible}
 			onOk={() => setVisible(false)}
 			onCancel={() => setVisible(false)}
+			closable={false}
 		>
 			<Input />
 			<DatePicker dropdownClassName={RND_CANCEL_DRAG_CLS} />
