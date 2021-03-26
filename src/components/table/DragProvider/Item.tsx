@@ -98,18 +98,21 @@ const Item: FC<IItemProps> = (props) => {
         preview(getEmptyImage(), {
             captureDraggingState: true,
         })
-        if (ref && ref.current) {
-            const th = ref.current.closest(TH)
-            const rect = th.getBoundingClientRect()
-            if (th) {
-                setStyle({
-                    // height: rect.height,
-                    padding: getComputedStyle(th).getPropertyValue("padding"),
-                    width: props.width || rect.width
-                })
-                th.style.padding = 0
-            }
-        }
+        /**
+         * @todo 暂时注释掉
+        */
+        // if (ref && ref.current) {
+        //     const th = ref.current.closest(TH)
+        //     const rect = th.getBoundingClientRect()
+        //     if (th) {
+        //         setStyle({
+        //             // height: rect.height,
+        //             padding: getComputedStyle(th).getPropertyValue("padding"),
+        //             width: props.width || rect.width
+        //         })
+        //         th.style.padding = 0
+        //     }
+        // }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
     return <div className="drag-item" ref={ref} style={style}>{children}</div>

@@ -1,5 +1,5 @@
 import InternalDragProvider from './dragProvider'
-import Item from './item'
+import Item from './Item'
 
 type TInternalDragProvider = typeof InternalDragProvider
 
